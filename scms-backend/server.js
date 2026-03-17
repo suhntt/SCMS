@@ -8,9 +8,19 @@ const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 const bcrypt = require("bcrypt");
 const axios = require("axios");
+const cloudinary = require('cloudinary').v2;
+const streamifier = require('streamifier');
+require('dotenv').config(); // Load .env file
 const AIClassifier = require("./classifier");
 
 const SALT_ROUNDS = 10;
+
+// Configure Cloudinary
+cloudinary.config({ 
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'YOUR_CLOUD_NAME_HERE', 
+  api_key: process.env.CLOUDINARY_API_KEY || 'YOUR_API_KEY_HERE', 
+  api_secret: process.env.CLOUDINARY_API_SECRET || 'YOUR_API_SECRET_HERE' 
+});
 
 // ===============================
 // 📧 NODEMAILER SETUP
@@ -55,12 +65,10 @@ let bucket = null;
 try {
   const serviceAccount = require("./serviceAccountKey.json");
   admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-    storageBucket: "scms-17eef.firebasestorage.app" // 🪣 Firebase Storage bucket
+    credential: admin.credential.cert(serviceAccount)
   });
   db = admin.firestore();
-  bucket = admin.storage().bucket();
-  console.log("✅ Firebase Admin SDK Initialised & Connected to LIVE Firestore + Storage");
+  console.log("✅ Firebase Admin SDK Initialised & Connected to LIVE Firestore");
 } catch (e) {
   console.log("⚠️ No serviceAccountKey.json found. Enabling LOCAL FIREBASE EMULATOR.");
   console.log("   (Start it in another terminal: npx firebase-tools emulators:start --project demo-scms-local)");
@@ -86,28 +94,23 @@ app.use(express.static(path.join(__dirname, "public")));
 const upload = multer({ storage: multer.memoryStorage() });
 
 // -------------------------------------------------------
-// 🪣 Helper: Upload buffer to Firebase Storage, return public URL
+// 🪣 Helper: Upload buffer to Cloudinary, return public URL
 // -------------------------------------------------------
-async function uploadToFirebaseStorage(fileBuffer, originalName, mimeType) {
-  if (!bucket) {
-    // Emulator mode: no real Storage available, return null
-    return null;
-  }
-  const ext = path.extname(originalName) || ".jpg";
-  const fileName = `complaints/${Date.now()}${ext}`;
-  const file = bucket.file(fileName);
-
-  await file.save(fileBuffer, {
-    metadata: { contentType: mimeType || "image/jpeg" }
+function uploadToCloudinary(fileBuffer) {
+  return new Promise((resolve, reject) => {
+    let stream = cloudinary.uploader.upload_stream(
+      { folder: "scms_complaints" },
+      (error, result) => {
+        if (result) {
+          console.log(`✅ Photo uploaded to Cloudinary: ${result.secure_url}`);
+          resolve(result.secure_url);
+        } else {
+          reject(error);
+        }
+      }
+    );
+    streamifier.createReadStream(fileBuffer).pipe(stream);
   });
-
-  // Make the file publicly readable
-  await file.makePublic();
-
-  // Return the permanent public download URL
-  const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
-  console.log(`✅ Photo uploaded to Firebase Storage: ${publicUrl}`);
-  return publicUrl;
 }
 
 // ===============================
@@ -307,14 +310,16 @@ app.post("/complaint", upload.single("photo"), async (req, res) => {
   const lon = longitude !== undefined ? longitude : null;
 
   try {
-    // 🪣 Upload photo to Firebase Storage (if provided)
+    // 🪣 Upload photo to Cloudinary (if provided)
+    // ⚠️ If Cloudinary fails, we still save the complaint without a photo
     let photoUrl = null;
     if (req.file) {
-      photoUrl = await uploadToFirebaseStorage(
-        req.file.buffer,
-        req.file.originalname,
-        req.file.mimetype
-      );
+      try {
+        photoUrl = await uploadToCloudinary(req.file.buffer);
+      } catch (uploadErr) {
+        console.warn("⚠️ Cloudinary upload failed (complaint will be saved without photo):", uploadErr.message || uploadErr);
+        photoUrl = null; // Continue without photo — complaint MUST still be saved
+      }
     }
 
     // 🧠 AI PROCESSOR: Predict Severity + Category if applicable
@@ -363,10 +368,9 @@ app.post("/complaint", upload.single("photo"), async (req, res) => {
 // ================================================
 app.get("/complaints", async (req, res) => {
   try {
-    const snapshot = await db.collection("complaints")
-      .orderBy("upvotes", "desc")
-      // Cannot double orderBy with a filter easily in base query so we sort memory or just rely on upvotes then created manually.
-      .get();
+    // ✅ No orderBy in Firestore query (avoids needing a composite index)
+    // We sort everything in memory below
+    const snapshot = await db.collection("complaints").get();
 
     // We need to fetch user names manually (Like a SQL JOIN)
     const allUsersSnap = await db.collection("users").get();
