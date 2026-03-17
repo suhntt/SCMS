@@ -50,13 +50,16 @@ const app = express();
 // 🔥 FIREBASE INIT
 // ===============================
 let db = null;
+let bucket = null;
 try {
   const serviceAccount = require("./serviceAccountKey.json");
   admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount)
+    credential: admin.credential.cert(serviceAccount),
+    storageBucket: "scms-17eef.firebasestorage.app" // 🪣 Firebase Storage bucket
   });
   db = admin.firestore();
-  console.log("✅ Firebase Admin SDK Initialised & Connected to LIVE Firestore");
+  bucket = admin.storage().bucket();
+  console.log("✅ Firebase Admin SDK Initialised & Connected to LIVE Firestore + Storage");
 } catch (e) {
   console.log("⚠️ No serviceAccountKey.json found. Enabling LOCAL FIREBASE EMULATOR.");
   console.log("   (Start it in another terminal: npx firebase-tools emulators:start --project demo-scms-local)");
@@ -75,16 +78,36 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use(express.static(path.join(__dirname, "public")));
 
 // ===============================
-// 📁 Multer Setup (Local Storage of Photos)
+// 📁 Multer Setup (Memory Storage → Firebase Storage)
 // ===============================
-const storage = multer.diskStorage({
-  destination: "uploads/",
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, Date.now() + ext);
+// We use memoryStorage so the file buffer is available for Firebase Storage upload.
+// Photos are no longer saved to local disk.
+const upload = multer({ storage: multer.memoryStorage() });
+
+// -------------------------------------------------------
+// 🪣 Helper: Upload buffer to Firebase Storage, return public URL
+// -------------------------------------------------------
+async function uploadToFirebaseStorage(fileBuffer, originalName, mimeType) {
+  if (!bucket) {
+    // Emulator mode: no real Storage available, return null
+    return null;
   }
-});
-const upload = multer({ storage });
+  const ext = path.extname(originalName) || ".jpg";
+  const fileName = `complaints/${Date.now()}${ext}`;
+  const file = bucket.file(fileName);
+
+  await file.save(fileBuffer, {
+    metadata: { contentType: mimeType || "image/jpeg" }
+  });
+
+  // Make the file publicly readable
+  await file.makePublic();
+
+  // Return the permanent public download URL
+  const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+  console.log(`✅ Photo uploaded to Firebase Storage: ${publicUrl}`);
+  return publicUrl;
+}
 
 // ===============================
 // 🔢 Auto-sequencer Helper for MySQL-like Integer IDs
@@ -278,12 +301,21 @@ app.post("/complaint", upload.single("photo"), async (req, res) => {
   const { category, address, latitude, longitude, description, user_id } = req.body;
 
   const place = (address && address.trim() !== "") ? address.trim() : "Address not available";
-  const photoFilename = req.file ? req.file.filename : null;
   const uid = user_id ? parseInt(user_id) : null;
   const lat = latitude !== undefined ? latitude : null;
   const lon = longitude !== undefined ? longitude : null;
 
   try {
+    // 🪣 Upload photo to Firebase Storage (if provided)
+    let photoUrl = null;
+    if (req.file) {
+      photoUrl = await uploadToFirebaseStorage(
+        req.file.buffer,
+        req.file.originalname,
+        req.file.mimetype
+      );
+    }
+
     // 🧠 AI PROCESSOR: Predict Severity + Category if applicable
     const prediction = await AIClassifier.classifyComplaint(description || category || "Unknown Hazard");
     let finalCategory = category || prediction.suggestedCategory;
@@ -299,8 +331,8 @@ app.post("/complaint", upload.single("photo"), async (req, res) => {
       place,
       latitude: lat,
       longitude: lon,
-      photoUrl: photoFilename ? `uploads/${photoFilename}` : null,
-      photo_gridfs_id: photoFilename, // legacy mapping support
+      photoUrl: photoUrl,           // ✅ Full Firebase Storage public URL
+      photo_gridfs_id: photoUrl,    // legacy field kept for compatibility
       status: "Pending",
       upvotes: 0,
       impactScore: finalSeverity === 'High' ? 100 : finalSeverity === 'Medium' ? 50 : 10,
@@ -371,7 +403,8 @@ app.get("/complaints", async (req, res) => {
         department: row.department,
         user_id: row.user_id,
         reporter_name: user.name || "Anonymous",
-        photo_url: row.photo_gridfs_id ? `uploads/${row.photo_gridfs_id}` : null
+        // ✅ Return full Firebase Storage URL directly (no prefix needed)
+        photo_url: row.photoUrl || null
       };
     });
 

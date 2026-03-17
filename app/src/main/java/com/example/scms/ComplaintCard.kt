@@ -38,10 +38,10 @@ fun ComplaintCard(
         Column(modifier = Modifier.padding(14.dp)) {
 
             /* ---------- PHOTO ---------- */
+            // ✅ photo_url is now a full Firebase Storage https:// URL — use it directly
             val imageUrl = complaint.photo_url
                 ?.trim()
                 ?.takeIf { it.isNotEmpty() }
-                ?.let { RetrofitClient.BASE_URL + it }
 
             if (imageUrl != null) {
                 AsyncImage(
