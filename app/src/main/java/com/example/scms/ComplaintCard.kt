@@ -45,17 +45,13 @@ fun ComplaintCard(
 
             if (imageUrl != null) {
                 AsyncImage(
-                    model = ImageRequest.Builder(context)
-                        .data(imageUrl)
-                        .crossfade(true)
-                        .diskCachePolicy(CachePolicy.DISABLED)
-                        .memoryCachePolicy(CachePolicy.DISABLED)
-                        .build(),
+                    model = imageUrl,
                     contentDescription = "Complaint Photo",
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(180.dp)
-                        .clip(RoundedCornerShape(12.dp))
+                        .clip(RoundedCornerShape(12.dp)),
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop
                 )
 
                 Spacer(modifier = Modifier.height(10.dp))

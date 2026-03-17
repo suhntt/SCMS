@@ -14,7 +14,6 @@ object RetrofitClient {
 
 
 
-
     private val logger = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
     }
