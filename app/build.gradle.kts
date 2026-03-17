@@ -59,6 +59,8 @@ dependencies {
     ------------------------------ */
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.7.0")
+
     implementation(libs.androidx.activity.compose)
     // 🔥 Firebase (CORRECT – via BOM)
     implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
