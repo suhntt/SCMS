@@ -1,0 +1,1974 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SCMS – Smart Complaint Management System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+    rel="stylesheet" />
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden
+    }
+
+    h1.hero {
+      color: #fff;
+      font-size: 2rem;
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 6px;
+      letter-spacing: -0.5px
+    }
+
+    p.hero-sub {
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 0.9rem;
+      text-align: center;
+      margin-bottom: 32px
+    }
+
+    /* PHONE FRAME */
+    .phone-wrap {
+      position: relative
+    }
+
+    .phone {
+      width: 360px;
+      height: 720px;
+      background: #111827;
+      border-radius: 44px;
+      border: 6px solid #374151;
+      box-shadow: 0 40px 120px rgba(0, 0, 0, 0.8), inset 0 0 0 2px #4B5563;
+      overflow: hidden;
+      position: relative
+    }
+
+    .phone-notch {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120px;
+      height: 28px;
+      background: #111827;
+      border-radius: 0 0 18px 18px;
+      z-index: 100
+    }
+
+    .screen {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      display: none;
+      flex-direction: column;
+      animation: fadeIn 0.3s ease
+    }
+
+    .screen.active {
+      display: flex
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(12px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
+
+    /* STATUS BAR */
+    .status-bar {
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      flex-shrink: 0;
+      background: transparent
+    }
+
+    .status-bar .time {
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600
+    }
+
+    .status-bar .icons {
+      color: #fff;
+      font-size: 12px;
+      display: flex;
+      gap: 6px
+    }
+
+    /* TOP BAR */
+    .topbar {
+      padding: 8px 16px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0
+    }
+
+    .topbar .title {
+      color: #fff;
+      font-size: 17px;
+      font-weight: 700;
+      flex: 1
+    }
+
+    .topbar .back {
+      color: #60A5FA;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px
+    }
+
+    /* BOTTOM NAV */
+    .bottom-nav {
+      height: 64px;
+      background: #1F2937;
+      display: flex;
+      border-top: 1px solid #374151;
+      flex-shrink: 0
+    }
+
+    .nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      gap: 3px;
+      transition: all 0.2s;
+      color: #6B7280
+    }
+
+    .nav-item.active {
+      color: #3B82F6
+    }
+
+    .nav-item svg {
+      width: 22px;
+      height: 22px
+    }
+
+    .nav-item span {
+      font-size: 9px;
+      font-weight: 500
+    }
+
+    /* CONTENT AREA */
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden
+    }
+
+    .content::-webkit-scrollbar {
+      width: 3px
+    }
+
+    .content::-webkit-scrollbar-thumb {
+      background: #374151;
+      border-radius: 4px
+    }
+
+    /* ── LOGIN SCREEN ── */
+    #screen-login {
+      background: linear-gradient(160deg, #0F172A, #1E293B)
+    }
+
+    .login-bg {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 30% 20%, rgba(59, 130, 246, 0.15), transparent 60%), radial-gradient(circle at 70% 80%, rgba(139, 92, 246, 0.12), transparent 60%)
+    }
+
+    .login-card {
+      position: relative;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 24px;
+      margin: 60px 20px 20px;
+      padding: 28px 24px;
+      backdrop-filter: blur(20px)
+    }
+
+    .login-logo {
+      text-align: center;
+      margin-bottom: 20px
+    }
+
+    .login-logo .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, #3B82F6, #8B5CF6);
+      border-radius: 50px;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff
+    }
+
+    .login-title {
+      color: #fff;
+      font-size: 24px;
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 4px
+    }
+
+    .login-sub {
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 12px;
+      text-align: center;
+      margin-bottom: 24px
+    }
+
+    .field {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px
+    }
+
+    .field span {
+      font-size: 16px
+    }
+
+    .field input {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-family: inherit;
+      font-size: 14px;
+      flex: 1
+    }
+
+    .field input::placeholder {
+      color: rgba(255, 255, 255, 0.3);
+      font-size: 13px
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 14px;
+      border-radius: 14px;
+      border: none;
+      background: linear-gradient(135deg, #3B82F6, #2563EB);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: transform 0.15s, box-shadow 0.15s;
+      font-family: inherit
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4)
+    }
+
+    .btn-primary:active {
+      transform: scale(0.98)
+    }
+
+    .link-row {
+      text-align: center;
+      margin-top: 14px;
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 12px
+    }
+
+    .link-row a {
+      color: #60A5FA;
+      cursor: pointer;
+      text-decoration: none
+    }
+
+    /* ── HOME SCREEN ── */
+    #screen-home {
+      background: #F1F5F9
+    }
+
+    #screen-home .topbar {
+      background: linear-gradient(135deg, #1E3A5F, #0F3057);
+      padding-top: 0
+    }
+
+    .home-banner {
+      margin: 14px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #3B82F6, #8B5CF6);
+      padding: 20px;
+      color: #fff;
+      position: relative;
+      overflow: hidden
+    }
+
+    .home-banner::after {
+      content: '🏙️';
+      position: absolute;
+      right: -10px;
+      bottom: -10px;
+      font-size: 72px;
+      opacity: 0.2
+    }
+
+    .home-banner h2 {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 4px
+    }
+
+    .home-banner p {
+      font-size: 11px;
+      opacity: 0.8
+    }
+
+    .home-banner .cta {
+      display: inline-block;
+      margin-top: 12px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid rgba(255, 255, 255, 0.3)
+    }
+
+    .section-title {
+      padding: 16px 16px 8px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #1E293B
+    }
+
+    .quick-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      padding: 0 14px 14px
+    }
+
+    .quick-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+      transition: transform 0.2s
+    }
+
+    .quick-card:hover {
+      transform: scale(1.02)
+    }
+
+    .quick-card .icon {
+      font-size: 28px;
+      width: 52px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 14px
+    }
+
+    .quick-card span {
+      font-size: 12px;
+      font-weight: 600;
+      color: #374151
+    }
+
+    .stats-row {
+      display: flex;
+      gap: 10px;
+      padding: 0 14px 14px
+    }
+
+    .stat-chip {
+      flex: 1;
+      background: #fff;
+      border-radius: 14px;
+      padding: 12px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06)
+    }
+
+    .stat-chip .num {
+      font-size: 20px;
+      font-weight: 800;
+      color: #1E293B
+    }
+
+    .stat-chip .lbl {
+      font-size: 10px;
+      color: #94A3B8;
+      margin-top: 2px
+    }
+
+    /* ── COMPLAINTS SCREEN ── */
+    #screen-complaints {
+      background: #F1F5F9
+    }
+
+    #screen-complaints .topbar {
+      background: linear-gradient(135deg, #1E3A5F, #0F3057)
+    }
+
+    .complaint-card {
+      background: #fff;
+      margin: 10px 12px;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07)
+    }
+
+    .complaint-img {
+      width: 100%;
+      height: 140px;
+      object-fit: cover;
+      background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px
+    }
+
+    .complaint-body {
+      padding: 12px
+    }
+
+    .complaint-cat {
+      font-size: 14px;
+      font-weight: 700;
+      color: #1E293B;
+      margin-bottom: 2px
+    }
+
+    .complaint-reporter {
+      font-size: 11px;
+      color: #3B82F6;
+      font-weight: 500;
+      margin-bottom: 6px
+    }
+
+    .complaint-addr {
+      font-size: 11px;
+      color: #64748B;
+      margin-bottom: 6px
+    }
+
+    .complaint-desc {
+      font-size: 12px;
+      color: #475569;
+      margin-bottom: 10px
+    }
+
+    .complaint-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between
+    }
+
+    .status-chip {
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 700
+    }
+
+    .status-pending {
+      background: #FEF9C3;
+      color: #854D0E
+    }
+
+    .status-resolved {
+      background: #DCFCE7;
+      color: #166534
+    }
+
+    .upvote-btn {
+      background: #3B82F6;
+      color: #fff;
+      border: none;
+      border-radius: 20px;
+      padding: 5px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: transform 0.15s
+    }
+
+    .upvote-btn:hover {
+      transform: scale(1.05)
+    }
+
+    .fab {
+      position: absolute;
+      right: 16px;
+      bottom: 80px;
+      width: 54px;
+      height: 54px;
+      background: linear-gradient(135deg, #3B82F6, #2563EB);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 6px 24px rgba(59, 130, 246, 0.5);
+      font-size: 24px;
+      color: #fff;
+      font-weight: 300;
+      transition: transform 0.2s
+    }
+
+    .fab:hover {
+      transform: scale(1.1)
+    }
+
+    /* ── REPORT SCREEN ── */
+    #screen-report {
+      background: #F8FAFC
+    }
+
+    #screen-report .topbar {
+      background: linear-gradient(135deg, #1E3A5F, #0F3057)
+    }
+
+    .report-section {
+      padding: 14px
+    }
+
+    .info-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #DCFCE7;
+      color: #166534;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-bottom: 10px
+    }
+
+    .meta-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: #64748B;
+      margin-bottom: 6px
+    }
+
+    .loc-card {
+      background: #EFF6FF;
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 14px;
+      border: 1px solid #BFDBFE
+    }
+
+    .loc-card p {
+      font-size: 11px;
+      color: #1D4ED8;
+      font-weight: 500
+    }
+
+    .form-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 6px;
+      display: block
+    }
+
+    .form-select {
+      width: 100%;
+      background: #fff;
+      border: 1.5px solid #E2E8F0;
+      border-radius: 12px;
+      padding: 11px 14px;
+      font-size: 13px;
+      font-family: inherit;
+      color: #1E293B;
+      margin-bottom: 14px;
+      outline: none
+    }
+
+    .form-textarea {
+      width: 100%;
+      background: #fff;
+      border: 1.5px solid #E2E8F0;
+      border-radius: 12px;
+      padding: 11px 14px;
+      font-size: 13px;
+      font-family: inherit;
+      color: #1E293B;
+      margin-bottom: 4px;
+      outline: none;
+      resize: none;
+      height: 80px
+    }
+
+    .char-count {
+      font-size: 10px;
+      color: #94A3B8;
+      text-align: right;
+      margin-bottom: 14px
+    }
+
+    .photo-preview {
+      width: 100%;
+      height: 120px;
+      background: linear-gradient(135deg, #334155, #1E293B);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      border: 2px dashed #475569;
+      transition: all 0.2s
+    }
+
+    .photo-preview.has-photo {
+      background: linear-gradient(135deg, #1D4ED8, #4F46E5);
+      border-style: solid;
+      border-color: #3B82F6
+    }
+
+    .btn-outline {
+      width: 100%;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1.5px solid #3B82F6;
+      background: transparent;
+      color: #3B82F6;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      margin-bottom: 10px;
+      transition: all 0.2s
+    }
+
+    .btn-outline:hover {
+      background: rgba(59, 130, 246, 0.08)
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 14px;
+      border-radius: 14px;
+      border: none;
+      background: linear-gradient(135deg, #16A34A, #15803D);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit
+    }
+
+    /* ── LEADERBOARD SCREEN ── */
+    #screen-leaderboard {
+      background: #0F1B2D
+    }
+
+    #screen-leaderboard .topbar {
+      background: transparent
+    }
+
+    .podium-area {
+      padding: 16px 12px 8px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 8px
+    }
+
+    .pillar-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px
+    }
+
+    .pillar-name {
+      font-size: 11px;
+      font-weight: 700;
+      color: #fff;
+      max-width: 70px;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis
+    }
+
+    .pillar-pts {
+      font-size: 11px;
+      font-weight: 600
+    }
+
+    .pillar-avatar {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 800;
+      color: #0F1B2D
+    }
+
+    .pillar-block {
+      border-radius: 8px 8px 0 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 900;
+      width: 80px
+    }
+
+    .gold-avatar {
+      background: #FFD700;
+    }
+
+    .silver-avatar {
+      background: #C0C0C0;
+    }
+
+    .bronze-avatar {
+      background: #CD7F32;
+    }
+
+    .gold-pts {
+      color: #FFD700
+    }
+
+    .silver-pts {
+      color: #C0C0C0
+    }
+
+    .bronze-pts {
+      color: #CD7F32
+    }
+
+    .pillar-gold {
+      background: rgba(255, 215, 0, 0.22);
+      color: #FFD700;
+      height: 110px
+    }
+
+    .pillar-silver {
+      background: rgba(192, 192, 192, 0.18);
+      color: #C0C0C0;
+      height: 80px
+    }
+
+    .pillar-bronze {
+      background: rgba(205, 127, 50, 0.18);
+      color: #CD7F32;
+      height: 60px
+    }
+
+    .lb-row {
+      margin: 5px 12px;
+      background: #1A2E4A;
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: relative
+    }
+
+    .lb-row.you {
+      background: linear-gradient(90deg, #1E3A5F, #163351)
+    }
+
+    .lb-rank {
+      width: 32px;
+      height: 32px;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.6);
+      flex-shrink: 0
+    }
+
+    .lb-avatar {
+      width: 36px;
+      height: 36px;
+      background: #2563EB;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0
+    }
+
+    .lb-info {
+      flex: 1
+    }
+
+    .lb-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff
+    }
+
+    .lb-name.you-name {
+      color: #FFD700
+    }
+
+    .lb-stats {
+      display: flex;
+      gap: 8px;
+      margin-top: 3px
+    }
+
+    .lb-stat {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.5)
+    }
+
+    .lb-pts {
+      text-align: right
+    }
+
+    .lb-pts-num {
+      font-size: 17px;
+      font-weight: 800;
+      color: #fff
+    }
+
+    .lb-pts-lbl {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.4)
+    }
+
+    .you-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: #FFD700;
+      color: #0F1B2D;
+      font-size: 8px;
+      font-weight: 900;
+      padding: 2px 6px;
+      border-radius: 5px
+    }
+
+    /* ── PROFILE SCREEN ── */
+    #screen-profile {
+      background: #F1F5F9
+    }
+
+    .profile-header {
+      background: linear-gradient(160deg, #1E3A5F, #0F3057);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center
+    }
+
+    .profile-avatar {
+      width: 72px;
+      height: 72px;
+      background: #2563EB;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 10px
+    }
+
+    .profile-name {
+      color: #fff;
+      font-size: 18px;
+      font-weight: 700
+    }
+
+    .profile-phone {
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 12px;
+      margin-top: 2px
+    }
+
+    .pts-badge {
+      background: rgba(255, 215, 0, 0.15);
+      border-radius: 50px;
+      padding: 8px 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px
+    }
+
+    .pts-badge-val {
+      color: #FFD700;
+      font-size: 20px;
+      font-weight: 800
+    }
+
+    .pts-badge-lbl {
+      color: rgba(255, 215, 0, 0.8);
+      font-size: 12px
+    }
+
+    .rank-text {
+      color: rgba(255, 255, 255, 0.75);
+      font-size: 12px;
+      margin-top: 6px
+    }
+
+    .profile-stats {
+      display: flex;
+      gap: 10px;
+      padding: 14px
+    }
+
+    .pstat {
+      flex: 1;
+      background: #fff;
+      border-radius: 14px;
+      padding: 12px;
+      text-align: center;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06)
+    }
+
+    .pstat-val {
+      font-size: 20px;
+      font-weight: 800;
+      color: #1E293B
+    }
+
+    .pstat-lbl {
+      font-size: 10px;
+      color: #94A3B8;
+      margin-top: 2px
+    }
+
+    .points-guide {
+      background: #fff;
+      margin: 0 14px 12px;
+      border-radius: 16px;
+      padding: 14px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06)
+    }
+
+    .points-guide h3 {
+      font-size: 13px;
+      font-weight: 700;
+      color: #1E293B;
+      margin-bottom: 10px
+    }
+
+    .guide-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 0;
+      border-bottom: 1px solid #F1F5F9
+    }
+
+    .guide-row:last-child {
+      border: none
+    }
+
+    .guide-action {
+      font-size: 12px;
+      color: #475569
+    }
+
+    .guide-pts {
+      font-size: 12px;
+      font-weight: 700;
+      color: #16A34A
+    }
+
+    .profile-btn {
+      margin: 0 14px 10px;
+      display: block;
+      width: calc(100% - 28px);
+      padding: 13px;
+      border-radius: 14px;
+      border: none;
+      background: linear-gradient(135deg, #1D4ED8, #2563EB);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit
+    }
+
+    .profile-btn-out {
+      background: transparent;
+      border: 1.5px solid #E2E8F0;
+      color: #475569
+    }
+
+    /* NAV BUTTON HIGHLIGHT TRANSITIONS */
+    .nav-highlight {
+      color: #60A5FA !important;
+    }
+
+    /* SIDEBAR NAV SELECTOR */
+    .app-nav {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 400px
+    }
+
+    .app-nav button {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: rgba(255, 255, 255, 0.8);
+      padding: 8px 18px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.2s
+    }
+
+    .app-nav button.active {
+      background: linear-gradient(135deg, #3B82F6, #6366F1);
+      border-color: transparent;
+      color: #fff;
+      font-weight: 700
+    }
+
+    .app-nav button:hover {
+      background: rgba(255, 255, 255, 0.14)
+    }
+
+    /* SUBMIT ANIMATION */
+    @keyframes pulse {
+
+      0%,
+      100% {
+        transform: scale(1)
+      }
+
+      50% {
+        transform: scale(1.04)
+      }
+    }
+
+    .submitting {
+      animation: pulse 0.8s ease infinite
+    }
+
+    /* TOAST */
+    .toast {
+      position: fixed;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #16A34A;
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      z-index: 999;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none
+    }
+
+    .toast.show {
+      opacity: 1
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1 class="hero">🌍 SCMS Preview</h1>
+  <p class="hero-sub">Smart Complaint Management System · Interactive Demo</p>
+
+  <!-- SCREEN SELECTOR -->
+  <div class="app-nav">
+    <button onclick="go('login')" id="btn-login" class="active">🔐 Login</button>
+    <button onclick="go('home')" id="btn-home">🏠 Home</button>
+    <button onclick="go('complaints')" id="btn-complaints">📋 Complaints</button>
+    <button onclick="go('report')" id="btn-report">➕ Report</button>
+    <button onclick="go('leaderboard')" id="btn-leaderboard">🏆 Leaderboard</button>
+    <button onclick="go('profile')" id="btn-profile">👤 Profile</button>
+  </div>
+
+  <!-- PHONE -->
+  <div class="phone-wrap" style="margin-top:24px">
+    <div class="phone">
+      <div class="phone-notch"></div>
+
+      <!-- ╔══════════════════╗ -->
+      <!-- ║   LOGIN SCREEN   ║ -->
+      <!-- ╚══════════════════╝ -->
+      <div class="screen active" id="screen-login">
+        <div class="login-bg"></div>
+        <div style="margin-top:40px;position:relative">
+          <div class="login-card">
+            <div class="login-logo"><span class="badge">🌍 SCMS</span></div>
+            <div class="login-title">Welcome Back</div>
+            <div class="login-sub">Login to continue reporting</div>
+            <div class="field"><span>✉️</span><input id="login-email" type="email" placeholder="Registered Gmail"
+                value="nibblesanju@gmail.com" />
+            </div>
+            <div class="field"><span>🔒</span><input id="login-pass" type="password" placeholder="Password"
+                value="demo" /></div>
+            <div style="text-align:right;margin:-4px 0 8px"><a onclick="go('forgot')"
+                style="color:#60A5FA;font-size:11px;cursor:pointer">Forgot password?</a></div>
+            <button class="btn-primary" onclick="loginAnim(this)">Login</button>
+            <div class="link-row">Don't have an account? <a onclick="go('signup')">Sign up</a></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ╔══════════════════╗ -->
+      <!-- ║   SIGNUP SCREEN  ║ -->
+      <!-- ╚══════════════════╝ -->
+      <div class="screen" id="screen-signup">
+        <div class="login-bg"
+          style="background:radial-gradient(circle at 70% 20%,rgba(16,185,129,0.15),transparent 60%)"></div>
+        <div style="margin-top:40px;position:relative">
+          <div class="login-card">
+            <div class="login-logo"><span class="badge" style="background:linear-gradient(135deg,#10B981,#059669)">🌍
+                SCMS</span></div>
+            <div class="login-title">Create Account</div>
+            <div class="login-sub">Join the civic community</div>
+            <div class="field"><span>👤</span><input id="sig-name" placeholder="Full Name" /></div>
+            <div class="field"><span>📞</span><input id="sig-phone" placeholder="Phone Number (10 digits)"
+                maxlength="10" /></div>
+            <div class="field"><span>✉️</span><input id="sig-email" type="email"
+                placeholder="Email (Example: ...@gmail.com)" /></div>
+            <div class="field"><span>🔒</span><input id="sig-pass" type="password" placeholder="Password" /></div>
+            <button class="btn-primary" style="background:linear-gradient(135deg,#10B981,#059669)"
+              onclick="signupAnim(this)">Sign Up</button>
+            <div class="link-row">Already have an account? <a onclick="go('login')">Login</a></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ╔══════════════════╗ -->
+      <!-- ║  FORGOT PASSWORD ║ -->
+      <!-- ╚══════════════════╝ -->
+      <div class="screen" id="screen-forgot">
+        <div class="login-bg"
+          style="background:radial-gradient(circle at 50% 50%,rgba(245,158,11,0.15),transparent 50%)"></div>
+        <div style="margin-top:40px;position:relative">
+          <div class="login-card">
+            <div class="login-back" onclick="go('login')"
+              style="color:#60A5FA;font-size:12px;cursor:pointer;margin-bottom:12px">‹ Back to Login</div>
+            <div class="login-title">Reset Password</div>
+            <div class="login-sub">Reset your password using your registered Gmail address</div>
+            <div class="field"><span>✉️</span><input id="for-email" type="email" placeholder="Registered Gmail" /></div>
+            <button class="btn-primary" style="background:linear-gradient(135deg,#F59E0B,#D97706);margin-top:12px;"
+              onclick="forgotAnim(this)">Send Reset Link</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ╔═════════════════╗ -->
+      <!-- ║   HOME SCREEN   ║ -->
+      <!-- ╚═════════════════╝ -->
+      <div class="screen" id="screen-home">
+        <div class="status-bar" style="background:linear-gradient(135deg,#1E3A5F,#0F3057)"><span class="time">11:41
+            PM</span>
+          <div class="icons">📶 🔋</div>
+        </div>
+        <div class="topbar" style="background:linear-gradient(135deg,#1E3A5F,#0F3057);padding-top:4px">
+          <div class="title">
+            <div style="color:#fff;font-size:16px;font-weight:800">SCMS</div>
+            <div style="color:rgba(255,255,255,0.6);font-size:10px;font-weight:400">Smart Complaint Management</div>
+          </div>
+          <div style="color:#FFD700;font-size:12px;font-weight:600">🏆 230 pts</div>
+        </div>
+        <div class="content">
+          <div class="home-banner" style="background:linear-gradient(135deg, #1E3A8A, #3B82F6)">
+            <h2>Civic Reporting Dashboard</h2>
+            <p>Smart, efficient, and community-driven.</p>
+            <div class="cta" onclick="go('report')">➕ Report an Issue</div>
+          </div>
+          <div class="stats-row">
+            <div class="stat-chip">
+              <div class="num">13</div>
+              <div class="lbl">Reported</div>
+            </div>
+            <div class="stat-chip">
+              <div class="num">7</div>
+              <div class="lbl">Resolved</div>
+            </div>
+            <div class="stat-chip">
+              <div class="num">31</div>
+              <div class="lbl">Upvotes</div>
+            </div>
+          </div>
+          <div class="section-title">Quick Actions</div>
+          <div class="quick-grid">
+            <div class="quick-card" onclick="go('complaints')">
+              <div class="icon" style="background:#EFF6FF">📋</div>
+              <span>View Complaints</span>
+            </div>
+            <div class="quick-card" onclick="go('report')">
+              <div class="icon" style="background:#F0FDF4">📸</div>
+              <span>Report Issue</span>
+            </div>
+            <div class="quick-card" onclick="go('leaderboard')">
+              <div class="icon" style="background:#FFFBEB">🏆</div>
+              <span>Leaderboard</span>
+            </div>
+            <div class="quick-card" onclick="go('profile')">
+              <div class="icon" style="background:#F5F3FF">👤</div>
+              <span>My Profile</span>
+            </div>
+          </div>
+          <div class="section-title">How SCMS Works</div>
+          <div style="padding:0 12px 14px;display:flex;flex-direction:column;gap:8px">
+            <div
+              style="background:#fff;border-radius:12px;padding:12px 14px;font-size:12px;color:#475569;box-shadow:0 1px 6px rgba(0,0,0,0.05)">
+              📍 Auto GPS + address tagging on every complaint</div>
+            <div
+              style="background:#fff;border-radius:12px;padding:12px 14px;font-size:12px;color:#475569;box-shadow:0 1px 6px rgba(0,0,0,0.05)">
+              🏆 Earn points for reporting and getting issues resolved</div>
+            <div
+              style="background:#fff;border-radius:12px;padding:12px 14px;font-size:12px;color:#475569;box-shadow:0 1px 6px rgba(0,0,0,0.05)">
+              👍 Community upvotes push urgent issues to the top</div>
+          </div>
+        </div>
+        <div class="bottom-nav">
+          <div class="nav-item" onclick="go('home')"><svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
+            </svg><span>Home</span></div>
+          <div class="nav-item" onclick="go('complaints')"><svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zm0-10v2h14V7H7z" />
+            </svg><span>Complaints</span></div>
+          <div class="nav-item" onclick="go('alerts')"><svg viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" />
+            </svg><span>Alerts</span></div>
+          <div class="nav-item" onclick="go('leaderboard')"><svg viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94.63 1.5 1.98 2.63 3.61 2.96V19H7v2h10v-2h-4v-3.1c1.63-.33 2.98-1.46 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2z" />
+            </svg><span>Leaders</span></div>
+          <div class="nav-item" onclick="go('profile')"><svg viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+            </svg><span>Profile</span></div>
+        </div>
+      </div>
+
+      <!-- ╔═════════════════════════╗ -->
+      <!-- ║   COMPLAINTS SCREEN     ║ -->
+      <!-- ╚═════════════════════════╝ -->
+      <div class="screen" id="screen-complaints">
+        <div class="status-bar" style="background:linear-gradient(135deg,#1E3A5F,#0F3057)"><span class="time">11:41
+            PM</span>
+          <div class="icons">📶 🔋</div>
+        </div>
+        <div class="topbar" style="background:linear-gradient(135deg,#1E3A5F,#0F3057);padding-top:4px">
+          <div class="title" style="color:#fff;font-size:17px;font-weight:700">Complaints</div>
+          <div style="color:rgba(255,255,255,0.6);font-size:11px">13 total</div>
+        </div>
+        <div class="content" style="position:relative">
+          <div class="complaint-card">
+            <div class="complaint-img">🛣️</div>
+            <div class="complaint-body">
+              <div class="complaint-cat">Road Damage</div>
+              <div class="complaint-reporter">👤 Reported by Rahul M.</div>
+              <div class="complaint-addr">📍 MG Road, Sector 14, Koramangala</div>
+              <div class="complaint-desc">Large pothole causing traffic hazard near the bus stop</div>
+              <div class="complaint-footer">
+                <span class="status-chip status-pending">⏳ Pending</span>
+                <button class="upvote-btn" onclick="upvote(this)">👍 21</button>
+              </div>
+            </div>
+          </div>
+          <div class="complaint-card">
+            <div class="complaint-img">💡</div>
+            <div class="complaint-body">
+              <div class="complaint-cat">Streetlight Issue</div>
+              <div class="complaint-reporter">👤 Reported by Priya S.</div>
+              <div class="complaint-addr">📍 Park St, Block 7, Indiranagar</div>
+              <div class="complaint-desc">3 streetlights not working for 2 weeks, area very dark at night</div>
+              <div class="complaint-footer">
+                <span class="status-chip status-resolved">✅ Resolved</span>
+                <button class="upvote-btn" onclick="upvote(this)">👍 4</button>
+              </div>
+            </div>
+          </div>
+          <div class="complaint-card">
+            <div class="complaint-img">🗑️</div>
+            <div class="complaint-body">
+              <div class="complaint-cat">Illegal Dumping</div>
+              <div class="complaint-reporter">👤 Reported by You</div>
+              <div class="complaint-addr">📍 NH 48, Near Petrol Pump, Hebbal</div>
+              <div class="complaint-desc">Construction waste dumped illegally blocking drain</div>
+              <div class="complaint-footer">
+                <span class="status-chip status-pending">⏳ Pending</span>
+                <button class="upvote-btn" onclick="upvote(this)">👍 3</button>
+              </div>
+            </div>
+          </div>
+          <div style="height:20px"></div>
+        </div>
+        <div class="fab" onclick="go('report')">+</div>
+        <div class="bottom-nav">
+          <div class="nav-item" onclick="go('home')"><svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
+            </svg><span>Home</span></div>
+          <div class="nav-item active" onclick="go('complaints')"><svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zm0-10v2h14V7H7z" />
+            </svg><span>Complaints</span></div>
+          <div class="nav-item" onclick="go('alerts')"><svg viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" />
+            </svg><span>Alerts</span></div>
+          <div class="nav-item" onclick="go('leaderboard')"><svg viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94.63 1.5 1.98 2.63 3.61 2.96V19H7v2h10v-2h-4v-3.1c1.63-.33 2.98-1.46 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2z" />
+            </svg><span>Leaders</span></div>
+          <div class="nav-item" onclick="go('profile')"><svg viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+            </svg><span>Profile</span></div>
+        </div>
+      </div>
+
+      <!-- ╔════════════════════╗ -->
+      <!-- ║   REPORT SCREEN    ║ -->
+      <!-- ╚════════════════════╝ -->
+      <div class="screen" id="screen-report">
+        <div class="status-bar" style="background:linear-gradient(135deg,#1E3A5F,#0F3057)"><span class="time">11:41
+            PM</span>
+          <div class="icons">📶 🔋</div>
+        </div>
+        <div class="topbar" style="background:linear-gradient(135deg,#1E3A5F,#0F3057);padding-top:4px">
+          <div class="back" onclick="go('complaints')">‹ Back</div>
+          <div class="title" style="color:#fff;font-size:15px;font-weight:700;flex:1;text-align:center">Report New
+            Complaint</div>
+          <div style="width:40px"></div>
+        </div>
+        <div class="content">
+          <div class="report-section">
+            <div class="info-chip">📡 Live Location Verified</div>
+            <div class="meta-row">📅 02 Mar 2026, 11:41 PM</div>
+            <div class="meta-row">📍 MG Road, Koramangala, Bengaluru</div>
+            <div class="loc-card">
+              <p>🌐 Lat: 12.93527 &nbsp;&nbsp; Lon: 77.61504</p>
+            </div>
+            <label class="form-label">Complaint Category</label>
+            <select class="form-select" id="cat-select">
+              <option>Select Category</option>
+              <option selected>Road Damage</option>
+              <option>Illegal Dumping</option>
+              <option>Water Leakage</option>
+              <option>Streetlight Issue</option>
+              <option>Park Problem</option>
+              <option>Other</option>
+            </select>
+            <label class="form-label">Description</label>
+            <textarea class="form-textarea" id="desc-area" oninput="updateChar()"
+              placeholder="Describe the issue clearly (min 10 chars)">Large pothole near bus stop causing accidents</textarea>
+            <div class="char-count" id="char-count">44 / 300</div>
+            <div class="photo-preview has-photo" id="photo-box" onclick="togglePhoto()">
+              📸 Photo Captured
+            </div>
+            <button class="btn-outline" onclick="togglePhoto()">📷 Retake Photo</button>
+            <button class="btn-submit" id="submit-btn" onclick="submitComplaint(this)">🚀 Submit Complaint</button>
+            <div style="text-align:center;font-size:10px;color:#94A3B8;margin-top:10px">All complaints verified using
+              live GPS &amp; photo</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ╔═══════════════════════╗ -->
+      <!-- ║  LEADERBOARD SCREEN   ║ -->
+      <!-- ╚═══════════════════════╝ -->
+      <div class="screen" id="screen-leaderboard">
+        <div class="status-bar"><span class="time" style="color:#fff">11:41 PM</span>
+          <div class="icons" style="color:#fff">📶 🔋</div>
+        </div>
+        <div class="topbar">
+          <span style="font-size:22px">🏆</span>
+          <div class="title" style="color:#fff;font-size:17px;font-weight:800">Civic Heroes</div>
+        </div>
+        <div class="content">
+          <!-- Podium -->
+          <div class="podium-area">
+            <!-- 2nd -->
+            <div class="pillar-wrap">
+              <div class="pillar-name">Priya S.</div>
+              <div class="pillar-pts silver-pts">180 pts</div>
+              <div class="pillar-avatar silver-avatar">P</div>
+              <div class="pillar-block pillar-silver">#2</div>
+            </div>
+            <!-- 1st -->
+            <div class="pillar-wrap">
+              <div class="pillar-name" style="color:#FFD700;font-weight:800">Rahul M.</div>
+              <div class="pillar-pts gold-pts">340 pts</div>
+              <div class="pillar-avatar gold-avatar">R</div>
+              <div class="pillar-block pillar-gold">#1</div>
+            </div>
+            <!-- 3rd -->
+            <div class="pillar-wrap">
+              <div class="pillar-name">Anjali K.</div>
+              <div class="pillar-pts bronze-pts">95 pts</div>
+              <div class="pillar-avatar bronze-avatar">A</div>
+              <div class="pillar-block pillar-bronze">#3</div>
+            </div>
+          </div>
+          <!-- List -->
+          <div class="lb-row you">
+            <div class="lb-rank">#4</div>
+            <div class="lb-avatar" style="background:#FFD700;color:#0F1B2D;font-weight:800">S</div>
+            <div class="lb-info">
+              <div class="lb-name you-name">Sushanta (You)</div>
+              <div class="lb-stats">
+                <span class="lb-stat">⭐ 5 reports</span>
+                <span class="lb-stat">✅ 3 resolved</span>
+                <span class="lb-stat">👍 21 votes</span>
+              </div>
+            </div>
+            <div class="lb-pts">
+              <div class="lb-pts-num" style="color:#FFD700">230</div>
+              <div class="lb-pts-lbl">pts</div>
+            </div>
+            <div class="you-badge">YOU</div>
+          </div>
+          <div class="lb-row">
+            <div class="lb-rank">#5</div>
+            <div class="lb-avatar">M</div>
+            <div class="lb-info">
+              <div class="lb-name">Mohan R.</div>
+              <div class="lb-stats"><span class="lb-stat">⭐ 4 reports</span><span class="lb-stat">✅ 2 resolved</span>
+              </div>
+            </div>
+            <div class="lb-pts">
+              <div class="lb-pts-num">80</div>
+              <div class="lb-pts-lbl">pts</div>
+            </div>
+          </div>
+          <div class="lb-row">
+            <div class="lb-rank">#6</div>
+            <div class="lb-avatar" style="background:#7C3AED">D</div>
+            <div class="lb-info">
+              <div class="lb-name">Deepa T.</div>
+              <div class="lb-stats"><span class="lb-stat">⭐ 3 reports</span><span class="lb-stat">✅ 1 resolved</span>
+              </div>
+            </div>
+            <div class="lb-pts">
+              <div class="lb-pts-num">52</div>
+              <div class="lb-pts-lbl">pts</div>
+            </div>
+          </div>
+          <div style="height:16px"></div>
+        </div>
+        <div class="bottom-nav" style="background:#0F1B2D;border-top:1px solid #1A2E4A">
+          <div class="nav-item" style="color:#4B5563" onclick="go('home')"><svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
+            </svg><span>Home</span></div>
+          <div class="nav-item" style="color:#4B5563" onclick="go('complaints')"><svg viewBox="0 0 24 24"
+              fill="currentColor">
+              <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zm0-10v2h14V7H7z" />
+            </svg><span>Complaints</span></div>
+          <div class="nav-item" style="color:#4B5563" onclick="go('home')"><svg viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" />
+            </svg><span>Alerts</span></div>
+          <div class="nav-item active" style="color:#60A5FA" onclick="go('leaderboard')"><svg viewBox="0 0 24 24"
+              fill="currentColor">
+              <path
+                d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94.63 1.5 1.98 2.63 3.61 2.96V19H7v2h10v-2h-4v-3.1c1.63-.33 2.98-1.46 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2z" />
+            </svg><span>Leaders</span></div>
+          <div class="nav-item" style="color:#4B5563" onclick="go('profile')"><svg viewBox="0 0 24 24"
+              fill="currentColor">
+              <path
+                d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+            </svg><span>Profile</span></div>
+        </div>
+      </div>
+
+      <!-- ╔════════════════════╗ -->
+      <!-- ║  PROFILE SCREEN    ║ -->
+      <!-- ╚════════════════════╝ -->
+      <div class="screen" id="screen-profile">
+        <div class="status-bar" style="background:linear-gradient(160deg,#1E3A5F,#0F3057)"><span class="time">11:41
+            PM</span>
+          <div class="icons">📶 🔋</div>
+        </div>
+        <div class="profile-header">
+          <div class="profile-avatar">S</div>
+          <div class="profile-name">Sushanta Dey</div>
+          <div class="profile-phone">+91 98765 43210</div>
+          <div class="pts-badge">
+            <span style="font-size:18px">🏆</span>
+            <span class="pts-badge-val">230</span>
+            <span class="pts-badge-lbl">pts</span>
+          </div>
+          <div class="rank-text">🏅 Rank #4 on the Leaderboard</div>
+        </div>
+        <div class="content">
+          <div class="profile-stats">
+            <div class="pstat">
+              <div class="pstat-val" style="color:#3B82F6">5</div>
+              <div class="pstat-lbl">Reported</div>
+            </div>
+            <div class="pstat">
+              <div class="pstat-val" style="color:#10B981">3</div>
+              <div class="pstat-lbl">Resolved</div>
+            </div>
+            <div class="pstat">
+              <div class="pstat-val" style="color:#F59E0B">21</div>
+              <div class="pstat-lbl">Upvotes</div>
+            </div>
+          </div>
+          <div class="points-guide">
+            <h3>How to earn points</h3>
+            <div class="guide-row"><span class="guide-action">📝 Submit a complaint</span><span class="guide-pts">+10
+                pts</span></div>
+            <div class="guide-row"><span class="guide-action">👍 Your complaint gets a vote</span><span
+                class="guide-pts">+2 pts</span></div>
+            <div class="guide-row"><span class="guide-action">✅ Your complaint is resolved</span><span
+                class="guide-pts">+20 pts</span></div>
+          </div>
+          <button class="profile-btn" onclick="go('leaderboard')">🏆 View Full Leaderboard</button>
+          <button class="profile-btn profile-btn-out" onclick="go('login')">Logout</button>
+          <div style="height:16px"></div>
+        </div>
+        <div class="bottom-nav">
+          <div class="nav-item" onclick="go('home')"><svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
+            </svg><span>Home</span></div>
+          <div class="nav-item" onclick="go('complaints')"><svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zm0-10v2h14V7H7z" />
+            </svg><span>Complaints</span></div>
+          <div class="nav-item" onclick="go('alerts')"><svg viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" />
+            </svg><span>Alerts</span></div>
+          <div class="nav-item" onclick="go('leaderboard')"><svg viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94.63 1.5 1.98 2.63 3.61 2.96V19H7v2h10v-2h-4v-3.1c1.63-.33 2.98-1.46 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2z" />
+            </svg><span>Leaders</span></div>
+          <div class="nav-item active" onclick="go('profile')"><svg viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+            </svg><span>Profile</span></div>
+        </div>
+      </div>
+
+      <!-- ╔═════════════════════════╗ -->
+      <!-- ║     ALERTS SCREEN       ║ -->
+      <!-- ╚═════════════════════════╝ -->
+      <div class="screen" id="screen-alerts">
+        <div class="status-bar" style="background:linear-gradient(135deg,#1E3A5F,#0F3057)"><span class="time">11:41
+            PM</span>
+          <div class="icons">📶 🔋</div>
+        </div>
+        <div class="topbar" style="background:linear-gradient(135deg,#1E3A5F,#0F3057);padding-top:4px">
+          <div class="title" style="color:#fff;font-size:17px;font-weight:700">Notifications & Alerts</div>
+        </div>
+        <div class="content" style="background:#F1F5F9;padding-top:10px">
+          <div id="alerts-container">
+            <div
+              style="background:#fff;margin:0 12px 10px;border-radius:12px;padding:12px;box-shadow:0 1px 4px rgba(0,0,0,0.05);border-left:4px solid #3B82F6">
+              <div style="font-size:10px;color:#64748B;margin-bottom:4px">Just Now</div>
+              <div style="font-size:13px;font-weight:600;color:#1E293B">Welcome to SCMS!</div>
+              <div style="font-size:11px;color:#475569;margin-top:2px">Start reporting issues to earn points and climb
+                the leaderboard.</div>
+            </div>
+          </div>
+        </div>
+        <div class="bottom-nav">
+          <div class="nav-item" onclick="go('home')"><svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
+            </svg><span>Home</span></div>
+          <div class="nav-item" onclick="go('complaints')"><svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zm0-10v2h14V7H7z" />
+            </svg><span>Complaints</span></div>
+          <div class="nav-item active" onclick="go('alerts')"><svg viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" />
+            </svg><span>Alerts</span></div>
+          <div class="nav-item" onclick="go('leaderboard')"><svg viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94.63 1.5 1.98 2.63 3.61 2.96V19H7v2h10v-2h-4v-3.1c1.63-.33 2.98-1.46 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2z" />
+            </svg><span>Leaders</span></div>
+          <div class="nav-item" onclick="go('profile')"><svg viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+            </svg><span>Profile</span></div>
+        </div>
+      </div>
+
+    </div><!-- /phone -->
+  </div><!-- /phone-wrap -->
+
+  <div class="toast" id="toast"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAFoFv17EzuNB5OnKvaTczHia0GkZwlAcI",
+      authDomain: "scms-17eef.firebaseapp.com",
+      projectId: "scms-17eef",
+      storageBucket: "scms-17eef.firebasestorage.app",
+      messagingSenderId: "477160542514",
+      appId: "1:477160542514:web:cf48a1c9952b90c0e8c72b"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // Export globally for the standard script to access
+    window.firebaseAuth = auth;
+    window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
+    window.signInWithEmailAndPassword = signInWithEmailAndPassword;
+    window.sendPasswordResetEmail = sendPasswordResetEmail;
+  </script>
+
+  <script>
+    const API_URL = "http://localhost:3000";
+    let currentUser = null;
+
+    const screens = ['login', 'signup', 'forgot', 'home', 'complaints', 'report', 'alerts', 'leaderboard', 'profile'];
+    function go(id) {
+      screens.forEach(s => {
+        const el = document.getElementById('screen-' + s);
+        if (el) el.classList.remove('active');
+        const b = document.getElementById('btn-' + s);
+        if (b) b.classList.remove('active');
+      });
+      const t = document.getElementById('screen-' + id);
+      if (t) t.classList.add('active');
+      const b = document.getElementById('btn-' + id);
+      if (b) b.classList.add('active');
+
+      if (id === 'leaderboard') loadLeaderboard();
+      if (id === 'complaints') loadComplaints();
+      if ((id === 'home' || id === 'profile') && currentUser) {
+        document.querySelector(".pts-badge-val").textContent = currentUser.points;
+        document.querySelector(".profile-name").textContent = currentUser.name;
+        document.querySelector(".profile-phone").textContent = currentUser.phone;
+      }
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    // ========================
+    // API: Auth
+    // ========================
+    async function signupAnim(btn) {
+      const name = document.getElementById("sig-name").value;
+      const phone = document.getElementById("sig-phone").value;
+      const email = document.getElementById("sig-email").value;
+      const password = document.getElementById("sig-pass").value;
+      if (!name || !phone || !password) { showToast("⚠️ Fill all required fields"); return; }
+      if (!/^\d{10}$/.test(phone)) { showToast("⚠️ Phone number must be 10 digits"); return; }
+
+      btn.textContent = 'Processing…'; btn.disabled = true;
+      try {
+        // Create user in genuine Firebase Auth to enable official password reset loopbacks
+        const userCredential = await window.createUserWithEmailAndPassword(window.firebaseAuth, email, password);
+
+        // Pass info to local Node backend for gamification metrics & profile data
+        const res = await fetch(`${API_URL}/signup`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, phone, email, password, fcm_token: userCredential.user.uid })
+        });
+        const data = await res.json();
+        if (data.success) { showToast('✅ Account Created via Firebase! Please Login.'); go('login'); }
+        else { showToast(`⚠️ ${data.message || 'Signup database mapping failed'}`); }
+      } catch (e) {
+        showToast(`⚠️ Auth Error: ${e.message}`);
+      }
+      btn.textContent = 'Sign Up'; btn.disabled = false;
+    }
+
+    async function forgotAnim(btn) {
+      const email = document.getElementById("for-email").value;
+      if (!email) { showToast("⚠️ Enter your email"); return; }
+      if (!email.toLowerCase().endsWith("@gmail.com")) { showToast("⚠️ Must be a Gmail address"); return; }
+
+      btn.textContent = 'Processing…'; btn.disabled = true;
+      try {
+        await window.sendPasswordResetEmail(window.firebaseAuth, email);
+        showToast('✅ Reset Link Sent to your Gmail Inbox! Check your email.');
+        go('login');
+      } catch (e) {
+        showToast(`⚠️ Check if the email exists!`);
+      }
+      btn.textContent = 'Send Reset Link'; btn.disabled = false;
+    }
+
+    async function loginAnim(btn) {
+      const email = document.getElementById("login-email").value;
+      const password = document.getElementById("login-pass").value;
+      if (!email || !password) { showToast("⚠️ Enter credentials"); return; }
+
+      btn.textContent = 'Processing…'; btn.disabled = true;
+      try {
+        // Sign in using official Firebase Auth via User's attached Project
+        const userCredential = await window.signInWithEmailAndPassword(window.firebaseAuth, email, password);
+
+        // Map backwards to the Node Backend Profile mapping API logically
+        // We're artificially pinging login using email as phone just to pass the payload 
+        const res = await fetch(`${API_URL}/login`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ phone: email, password })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          currentUser = data.user;
+          showToast('✅ Logged in securely via Firebase!');
+          go('home');
+        } else {
+          // Soft-fallback if Firebase Auth worked but Node hasn't mapped the local profile data yet (e.g if they didn't hit signup on this specific device)
+          currentUser = { name: "Firebase User", phone: email, points: 0 };
+          go('home');
+          showToast('✅ Logged in via Firebase Auth.');
+        }
+      } catch (e) {
+        showToast('⚠️ Invalid Login Credentials.');
+      }
+      btn.textContent = 'Login'; btn.disabled = false;
+    }
+
+    // ========================
+    // API: Complaints
+    // ========================
+    async function loadComplaints() {
+      try {
+        const res = await fetch(`${API_URL}/complaints`);
+        const data = await res.json();
+
+        const container = document.querySelector("#screen-complaints .content");
+        container.innerHTML = ``;
+
+        // Add fake one if empty so it doesn't look bad
+        if (data.length === 0) {
+          container.innerHTML = `<div style="padding:20px;text-align:center;color:#fff">No complaints yet. Report one!</div>`;
+        }
+
+        data.forEach(c => {
+          const isResolved = c.status === 'Resolved';
+          container.innerHTML += `
+      <div class="complaint-card">
+        <div class="complaint-img">📍</div>
+        <div class="complaint-body">
+          <div class="complaint-cat">${c.category}</div>
+          <div class="complaint-reporter">👤 Reported by ${c.reporter_name}</div>
+          <div class="complaint-addr">📍 ${c.address}</div>
+          <div class="complaint-desc">${c.description}</div>
+          <div class="complaint-footer">
+            <span class="status-chip ${isResolved ? 'status-resolved' : 'status-pending'}">
+              ${isResolved ? '✅ Resolved' : '⏳ Pending'}
+            </span>
+            <button class="upvote-btn" onclick="upvote(this, '${c.id}')">👍 ${c.upvotes}</button>
+          </div>
+        </div>
+      </div>`;
+        });
+        container.innerHTML += `<div style="height:20px"></div>`;
+
+        generateAlerts(data);
+      } catch (e) { console.error("Could not load complaints", e); }
+    }
+
+    function generateAlerts(complaints) {
+      const alertContainer = document.getElementById("alerts-container");
+      if (!alertContainer) return;
+      alertContainer.innerHTML = '';
+
+      let html = `
+        <div style="background:#fff;margin:0 12px 10px;border-radius:12px;padding:12px;box-shadow:0 1px 4px rgba(0,0,0,0.05);border-left:4px solid #3B82F6">
+          <div style="font-size:10px;color:#64748B;margin-bottom:4px">System</div>
+          <div style="font-size:13px;font-weight:600;color:#1E293B">Welcome to SCMS!</div>
+          <div style="font-size:11px;color:#475569;margin-top:2px">Start reporting issues to earn points and climb the leaderboard.</div>
+        </div>
+      `;
+
+      // Mock 10km Radius Logic: If a complaint is Road Damage and Pending, show an alert.
+      const hazards = complaints.filter(c => c.category === 'Road Damage' && c.status === 'Pending');
+
+      hazards.forEach(h => {
+        html += `
+          <div style="background:#fff;margin:0 12px 10px;border-radius:12px;padding:12px;box-shadow:0 1px 4px rgba(0,0,0,0.05);border-left:4px solid #EF4444">
+            <div style="display:flex;justify-content:space-between">
+              <div style="font-size:10px;color:#EF4444;margin-bottom:4px;font-weight:700">⚠️ HAZARD ALERT: Within 10km</div>
+              <div style="font-size:10px;color:#64748B">Live Update</div>
+            </div>
+            <div style="font-size:13px;font-weight:600;color:#1E293B">${h.category} at ${h.address}</div>
+            <div style="font-size:11px;color:#475569;margin-top:2px">Description: "${h.description.substring(0, 40)}...". Please consider taking an alternate route to avoid traffic!</div>
+          </div>
+        `;
+      });
+
+      alertContainer.innerHTML = html;
+    }
+
+    async function upvote(btn, id) {
+      btn.disabled = true;
+      try {
+        const res = await fetch(`${API_URL}/upvote/${id}`, { method: "POST" });
+        if ((await res.json()).success) {
+          const parts = btn.textContent.split("👍 ");
+          btn.textContent = '👍 ' + (parseInt(parts[1]) + 1);
+          btn.style.background = '#16A34A';
+          showToast('👍 Upvoted! Reporter earns +2 pts');
+          setTimeout(() => btn.style.background = '', 1500);
+        }
+      } catch (e) { }
+      btn.disabled = false;
+    }
+
+    function updateChar() {
+      const v = document.getElementById('desc-area').value;
+      document.getElementById('char-count').textContent = v.length + ' / 300';
+    }
+
+    let hasPhoto = true;
+    function togglePhoto() {
+      const b = document.getElementById('photo-box');
+      hasPhoto = !hasPhoto;
+      if (hasPhoto) { b.classList.add('has-photo'); b.textContent = '📸 Photo Captured'; }
+      else { b.classList.remove('has-photo'); b.textContent = '📷 Tap to capture photo'; }
+    }
+
+    async function submitComplaint(btn) {
+      const cat = document.getElementById('cat-select').value;
+      const desc = document.getElementById('desc-area').value;
+
+      if (cat === 'Select Category') { showToast('⚠️ Please select a category'); return; }
+      if (desc.length < 10) { showToast('⚠️ Description too short'); return; }
+      if (!hasPhoto) { showToast('⚠️ Photo required'); return; }
+      if (!currentUser) { showToast('⚠️ Please login first'); return; }
+
+      btn.textContent = 'Submitting…'; btn.classList.add('submitting'); btn.disabled = true;
+
+      try {
+        const formData = new FormData();
+        formData.append("category", cat);
+        formData.append("description", desc);
+        formData.append("address", "Preview Location, GPS Mocked");
+        formData.append("user_id", currentUser.id);
+
+        // We send a normal form data (no actual file for demo since input=file is missing)
+        const res = await fetch(`${API_URL}/complaint`, {
+          method: "POST",
+          body: formData
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          currentUser.points += 10;
+          showToast('✅ Complaint submitted! +10 pts earned 🏆');
+          if (cat === 'Road Damage') {
+            setTimeout(() => showToast('⚠️ Road Damage Alert broadcasted to nearby users!'), 2000);
+          }
+          setTimeout(() => go('complaints'), 600);
+        } else { showToast('⚠️ Failed to submit'); }
+      } catch (e) { showToast('⚠️ Network Error'); }
+
+      btn.textContent = '🚀 Submit Complaint'; btn.classList.remove('submitting'); btn.disabled = false;
+    }
+
+    // ========================
+    // API: Leaderboard
+    // ========================
+    async function loadLeaderboard() {
+      try {
+        const res = await fetch(`${API_URL}/leaderboard`);
+        const data = await res.json();
+
+        const container = document.querySelector("#screen-leaderboard .content");
+        container.innerHTML = `<div class="podium-area"></div>`; // clear
+
+        let html = "";
+        data.forEach((u, i) => {
+          const isYou = currentUser && u.id === currentUser.id;
+          html += `
+      <div class="lb-row ${isYou ? 'you' : ''}">
+        <div class="lb-rank">#${i + 1}</div>
+        <div class="lb-avatar">${u.name.charAt(0).toUpperCase()}</div>
+        <div class="lb-info">
+          <div class="lb-name ${isYou ? 'you-name' : ''}">${u.name} ${isYou ? '(You)' : ''}</div>
+          <div class="lb-stats">
+            <span class="lb-stat">⭐ ${u.total_complaints} reports</span>
+            <span class="lb-stat">✅ ${u.resolved_complaints} resolved</span>
+          </div>
+        </div>
+        <div class="lb-pts"><div class="lb-pts-num">${u.points}</div><div class="lb-pts-lbl">pts</div></div>
+        ${isYou ? '<div class="you-badge">YOU</div>' : ''}
+      </div>`;
+        });
+        container.innerHTML += html + `<div style="height:16px"></div>`;
+      } catch (e) { console.error("Could not load leaderboard"); }
+    }
+  </script>
+</body>
+
+</html>

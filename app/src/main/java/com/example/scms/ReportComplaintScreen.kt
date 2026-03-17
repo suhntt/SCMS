@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -121,6 +123,14 @@ fun ReportComplaintScreen(navController: NavController) {
 
     /* ---------------- CAMERA RESULT ---------------- */
 
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            photoUri = uri.toString()
+        }
+    }
+
     LaunchedEffect(Unit) {
         navController.currentBackStackEntry
             ?.savedStateHandle
@@ -169,15 +179,27 @@ fun ReportComplaintScreen(navController: NavController) {
 
                 AssistChip(
                     onClick = {},
-                    label = { Text("📡 Live Location Verified") },
+                    label = { Text("Live Location Verified") },
+                    leadingIcon = { Icon(Icons.Default.Verified, contentDescription = null, modifier = Modifier.size(16.dp)) },
                     colors = AssistChipDefaults.assistChipColors(
-                        containerColor = Color(0xFF2E7D32)
+                        containerColor = Color(0xFF2E7D32),
+                        labelColor = Color.White,
+                        leadingIconContentColor = Color.White
                     )
                 )
 
                 Spacer(Modifier.height(8.dp))
-                Text("📅 $currentTime", fontSize = 13.sp)
-                Text("📍 $address", fontSize = 13.sp)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.DateRange, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(currentTime, fontSize = 13.sp)
+                }
+                Spacer(Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.LocationOn, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(address, fontSize = 13.sp)
+                }
 
                 Spacer(Modifier.height(8.dp))
 
@@ -189,7 +211,11 @@ fun ReportComplaintScreen(navController: NavController) {
                         )
                     ) {
                         Column(Modifier.padding(12.dp)) {
-                            Text("🌐 Location Coordinates", fontWeight = FontWeight.Medium)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.MyLocation, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Location Coordinates", fontWeight = FontWeight.Medium)
+                            }
                             Text("Latitude: $latitude")
                             Text("Longitude: $longitude")
                         }
@@ -252,11 +278,27 @@ fun ReportComplaintScreen(navController: NavController) {
                     Spacer(Modifier.height(12.dp))
                 }
 
-                Button(
-                    onClick = { navController.navigate("camera") },
-                    modifier = Modifier.fillMaxWidth()
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(if (photoUri == null) "📷 Capture Live Photo" else "📸 Retake Photo")
+                    Button(
+                        onClick = { navController.navigate("camera") },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Default.CameraAlt, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(if (photoUri == null) "Live Photo" else "Retake")
+                    }
+                    Button(
+                        onClick = { galleryLauncher.launch("image/*") },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                    ) {
+                        Icon(Icons.Default.PhotoLibrary, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(if (photoUri == null) "Gallery" else "Replace")
+                    }
                 }
 
                 Spacer(Modifier.height(24.dp))
@@ -279,17 +321,50 @@ fun ReportComplaintScreen(navController: NavController) {
                                     )
                                 }
 
-                                RetrofitClient.api.submitComplaint(
-                                    photo = photoPart,
-                                    category = selectedCategory.toRequestBody("text/plain".toMediaTypeOrNull()),
-                                    address = address.toRequestBody("text/plain".toMediaTypeOrNull()),
-                                    latitude = (latitude ?: "").toRequestBody("text/plain".toMediaTypeOrNull()),
-                                    longitude = (longitude ?: "").toRequestBody("text/plain".toMediaTypeOrNull()),
-                                    description = description.toRequestBody("text/plain".toMediaTypeOrNull())
-                                )
+                                val uid = UserSession.currentUser?.id?.toString() ?: ""
+
+                                if (NetworkUtils.isInternetAvailable(context)) {
+                                    // 🟢 ONLINE: Send Immediately
+                                    RetrofitClient.api.submitComplaint(
+                                        photo = photoPart,
+                                        category = selectedCategory.toRequestBody("text/plain".toMediaTypeOrNull()),
+                                        address = address.toRequestBody("text/plain".toMediaTypeOrNull()),
+                                        latitude = (latitude ?: "").toRequestBody("text/plain".toMediaTypeOrNull()),
+                                        longitude = (longitude ?: "").toRequestBody("text/plain".toMediaTypeOrNull()),
+                                        description = description.toRequestBody("text/plain".toMediaTypeOrNull()),
+                                        userId = uid.toRequestBody("text/plain".toMediaTypeOrNull())
+                                    )
+                                } else {
+                                    // 🔴 OFFLINE: Queue Locally
+                                    val offlineComplaint = OfflineComplaint(
+                                        photoUri = photoUri,
+                                        category = selectedCategory,
+                                        address = address,
+                                        latitude = latitude ?: "",
+                                        longitude = longitude ?: "",
+                                        description = description,
+                                        userId = uid
+                                    )
+                                    OfflineComplaintManager.saveComplaintOffline(context, offlineComplaint)
+                                    // Toast.makeText(context, "Offline detected. Complaint saved and will auto-sync.", Toast.LENGTH_LONG).show()
+                                }
 
                                 navController.popBackStack()
 
+                            } catch (e: Exception) {
+                                // If Retrofit fails (e.g., timeout/flaky network), queue it
+                                val uid = UserSession.currentUser?.id?.toString() ?: ""
+                                val offlineComplaint = OfflineComplaint(
+                                    photoUri = photoUri,
+                                    category = selectedCategory,
+                                    address = address,
+                                    latitude = latitude ?: "",
+                                    longitude = longitude ?: "",
+                                    description = description,
+                                    userId = uid
+                                )
+                                OfflineComplaintManager.saveComplaintOffline(context, offlineComplaint)
+                                navController.popBackStack()
                             } finally {
                                 isSubmitting = false
                             }

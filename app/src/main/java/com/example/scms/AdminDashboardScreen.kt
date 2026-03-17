@@ -91,15 +91,15 @@ fun AdminDashboardScreen(navController: NavController) {
 
                         Spacer(modifier = Modifier.height(8.dp))
 
-                        Text("📍 Address: ${c.address}")
-                        Text("📅 ${formatTo12Hour(c.created_at)}")
-                        Text("🏷 Category: ${c.category}")
-                        Text("🌐 Latitude: ${c.latitude}")
-                        Text("🌐 Longitude: ${c.longitude}")
-                        Text("📝 ${c.description}")
-                        Text("👍 Upvotes: ${c.upvotes}")
-                        Text("⏳ Status: ${c.status}")
-                        Text("🏢 Department: ${c.department ?: "Not Assigned"}")
+                        Text("Address: ${c.address}")
+                        Text("Reported: ${formatTo12Hour(c.created_at)}")
+                        Text("Category: ${c.category}")
+                        Text("Latitude: ${c.latitude}")
+                        Text("Longitude: ${c.longitude}")
+                        Text("Details: ${c.description}")
+                        Text("Upvotes: ${c.upvotes}")
+                        Text("Status: ${c.status}")
+                        Text("Department: ${c.department ?: "Not Assigned"}")
 
                         Spacer(modifier = Modifier.height(10.dp))
 

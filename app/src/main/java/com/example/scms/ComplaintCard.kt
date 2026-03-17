@@ -4,13 +4,19 @@ import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
@@ -61,6 +67,26 @@ fun ComplaintCard(
                 style = MaterialTheme.typography.titleMedium
             )
 
+            /* ---------- REPORTER CREDIT ---------- */
+            if (!complaint.reporter_name.isNullOrBlank()) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Filled.Person,
+                        contentDescription = null,
+                        tint = Color(0xFF2563EB),
+                        modifier = Modifier.size(13.dp)
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        text = "Reported by ${complaint.reporter_name}",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF2563EB)
+                    )
+                }
+                Spacer(Modifier.height(2.dp))
+            }
+
             /* ---------- ADDRESS ---------- */
             Text(
                 text = complaint.address ?: "Address not available",
@@ -75,15 +101,15 @@ fun ComplaintCard(
 
             if (lat != null && lon != null) {
                 Text(
-                    text = "🌐 Lat: ${String.format("%.5f", lat)}, " +
-                            "Lon: ${String.format("%.5f", lon)}",
+                    text = "Location: Lat ${String.format("%.5f", lat)}, " +
+                            "Lon ${String.format("%.5f", lon)}",
                     style = MaterialTheme.typography.labelSmall
                 )
             }
 
             /* ---------- DATE & TIME ---------- */
             Text(
-                text = "🕒 ${formatTo12Hour(complaint.created_at)}",
+                text = "Reported: ${formatTo12Hour(complaint.created_at)}",
                 style = MaterialTheme.typography.labelSmall
             )
 
@@ -138,7 +164,9 @@ fun ComplaintCard(
 
                     /* ---------- UPVOTE ---------- */
                     Button(onClick = onUpvote) {
-                        Text("👍 ${complaint.upvotes}")
+                        Icon(Icons.Default.ThumbUp, contentDescription = "Upvote", modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(complaint.upvotes.toString())
                     }
                 }
             }

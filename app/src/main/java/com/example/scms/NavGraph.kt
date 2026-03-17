@@ -24,7 +24,12 @@ import androidx.navigation.compose.composable
 
         // 🏠 HOME INFO
         composable("home") {
-            HomeInfoScreen()
+            HomeInfoScreen(navController)
+        }
+
+        // 🚨 1-TAP SOS
+        composable("sos") {
+            SosScreen(navController)
         }
 
         // 📋 COMPLAINTS

@@ -7,12 +7,13 @@ class SessionManager(context: Context) {
     private val prefs =
         context.getSharedPreferences("scms_prefs", Context.MODE_PRIVATE)
 
-    // ✅ Save logged-in user
+    // ✅ Save logged-in user (now includes points)
     fun saveUser(user: User) {
         prefs.edit()
             .putInt("id", user.id)
             .putString("name", user.name)
             .putString("phone", user.phone)
+            .putInt("points", user.points)
             .apply()
     }
 
@@ -24,11 +25,17 @@ class SessionManager(context: Context) {
         return User(
             id = id,
             name = prefs.getString("name", "") ?: "",
-            phone = prefs.getString("phone", "") ?: ""
+            phone = prefs.getString("phone", "") ?: "",
+            points = prefs.getInt("points", 0)
         )
     }
 
-    // ✅ Quick login check
+    // ✅ Update points without re-login
+    fun updatePoints(points: Int) {
+        prefs.edit().putInt("points", points).apply()
+    }
+
+    // ✅ Clear session on logout
     fun clear() {
         prefs.edit().clear().apply()
     }

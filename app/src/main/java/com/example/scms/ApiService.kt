@@ -27,8 +27,10 @@ interface ApiService {
         @Part("address") address: RequestBody,
         @Part("latitude") latitude: RequestBody,
         @Part("longitude") longitude: RequestBody,
-        @Part("description") description: RequestBody
+        @Part("description") description: RequestBody,
+        @Part("user_id") userId: RequestBody
     ): Response<Unit>
+
     @POST("login")
     suspend fun login(
         @Body body: Map<String, String>
@@ -39,25 +41,46 @@ interface ApiService {
         @Body body: Map<String, String>
     ): Response<Map<String, Boolean>>
 
+    // ===============================
+    // 🏆 GAMIFICATION
+    // ===============================
 
+    @GET("leaderboard")
+    suspend fun getLeaderboard(): List<LeaderboardEntry>
 
-
-
+    @GET("user/{id}/points")
+    suspend fun getUserPoints(
+        @Path("id") id: Int
+    ): Response<PointsResponse>
 
     // ===============================
     // ADMIN SIDE
     // ===============================
 
-    // ✅ Assign Department
     @PUT("complaint/department/{id}")
     suspend fun assignDepartment(
         @Path("id") id: Int,
         @Body body: Map<String, String>
     ): Response<Unit>
 
-    // ✅ Mark Complaint as Resolved
     @POST("complaint/resolve/{id}")
     suspend fun markResolved(
         @Path("id") id: Int
     ): Response<Unit>
+
+    // ===============================
+    // 🚨 ALERTS
+    // ===============================
+
+    @GET("alerts")
+    suspend fun getAlerts(): List<Alert>
+
+    // ===============================
+    // 🚦 EMERGENCY SOS / ACCIDENTS
+    // ===============================
+
+    @POST("accidents")
+    suspend fun postAccident(
+        @Body body: Map<String, String>
+    ): Response<Map<String, Any>>
 }

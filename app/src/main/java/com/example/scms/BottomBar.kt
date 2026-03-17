@@ -12,6 +12,7 @@ fun BottomBar(navController: NavController) {
         BottomNavItem.Home,
         BottomNavItem.Complaints,
         BottomNavItem.Alerts,
+        BottomNavItem.Leaderboard,
         BottomNavItem.Profile
     )
 

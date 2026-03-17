@@ -5,8 +5,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.padding
 import androidx.navigation.compose.*
-import com.example.scms.SignupScreen
-
 
 @Composable
 fun MainScreen() {
@@ -18,6 +16,7 @@ fun MainScreen() {
         "home",
         "complaints",
         "alerts",
+        "leaderboard",
         "profile"
     )
 
@@ -44,14 +43,19 @@ fun MainScreen() {
                 LoginScreen(navController)
             }
 
-            // 🆕 SIGNUP  ✅ THIS FIXES THE CRASH
+            // 🆕 SIGNUP
             composable("signup") {
                 SignupScreen(navController)
             }
 
             // 🏠 HOME INFO
             composable("home") {
-                HomeInfoScreen()
+                HomeInfoScreen(navController)
+            }
+
+            // 🚨 SOS
+            composable("sos") {
+                SosScreen(navController)
             }
 
             // 📋 COMPLAINTS
@@ -77,6 +81,11 @@ fun MainScreen() {
             // ➕ REPORT
             composable("report") {
                 ReportComplaintScreen(navController)
+            }
+
+            // 🏆 LEADERBOARD
+            composable("leaderboard") {
+                LeaderboardScreen(navController)
             }
 
             // 👮 ADMIN
