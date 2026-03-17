@@ -7,6 +7,7 @@ const admin = require("firebase-admin");
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 const bcrypt = require("bcrypt");
+const axios = require("axios");
 const AIClassifier = require("./classifier");
 
 const SALT_ROUNDS = 10;
