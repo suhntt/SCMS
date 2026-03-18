@@ -868,6 +868,102 @@ app.get("/social-listening", async (req, res) => {
 });
 
 // ===============================
+// 🌪️ AUTOMATED NATURAL DISASTER CHECKER
+// ===============================
+/**
+ * Automatically checks for severe weather conditions 
+ * (Thunderstorms, Heavy Rain, Floods) in the user's city/area.
+ * If detected, it broadcasts an Alert to all users.
+ */
+const CHECK_INTERVAL = 30 * 60 * 1000; // Check every 30 minutes
+const DEFAULT_LAT = 24.8333; // Default area: Silchar/Assam (Adjust to your city)
+const DEFAULT_LON = 92.7789;
+
+async function checkNaturalDisasters() {
+  console.log("🔍 Checking for natural disasters/severe weather...");
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${DEFAULT_LAT}&longitude=${DEFAULT_LON}&current=temperature_2m,rain,wind_speed_10m,weather_code`;
+    const res = await axios.get(url);
+    const { weather_code, rain, wind_speed_10m } = res.data.current;
+
+    let title = "";
+    let message = "";
+    let type = "info";
+
+    // WMO Weather Code Mapping for Severe Weather
+    if (weather_code >= 95) {
+      title = "⛈️ Thunderstorm Warning";
+      message = "Severe thunderstorm detected in your area. Please stay indoors and avoid using electrical appliances. Be safe!";
+      type = "danger";
+    } else if (weather_code === 65 || weather_code === 82 || rain > 10) {
+      title = "🌧️ Heavy Rain/Flood Alert";
+      message = "Extremely heavy rainfall detected. Risk of localized flooding increased. Avoid low-lying areas and stay alert.";
+      type = "danger";
+    } else if (wind_speed_10m > 50) {
+      title = "💨 High Wind Warning";
+      message = "Strong gale-force winds detected. Stay away from trees, signs, and temporary structures. Stay safe!";
+      type = "warning";
+    }
+
+    if (title) {
+      // 1. Log to server console
+      console.log(`📡 Disaster Detected: ${title}`);
+
+      // 2. Check if this specific alert (by title and current date) already exists to avoid spamming
+      const today = new Date().toISOString().split('T')[0];
+      const existing = await db.collection("alerts")
+        .where("title", "==", title)
+        .where("area", "==", "System Auto-Detection")
+        .get();
+        
+      // If we already sent a specific severe alert in the last 4 hours, don't spam
+      const fourHoursAgo = Date.now() - (4 * 60 * 60 * 1000);
+      const isDuplicate = existing.docs.some(doc => {
+         const d = doc.data();
+         return d.created_at && (d.created_at.toMillis() > fourHoursAgo);
+      });
+
+      if (!isDuplicate) {
+        const newId = await getNextId("alerts");
+        await db.collection("alerts").doc(newId.toString()).set({
+          title,
+          message,
+          type: type,
+          area: "System Auto-Detection",
+          reporterName: "SCMS Weather Bot",
+          created_at: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        // 3. Push Notification to All Users
+        if (admin.apps.length > 0) {
+          admin.messaging().send({
+            topic: "all_users",
+            notification: {
+              title: title,
+              body: message
+            },
+            data: {
+               "screen": "alerts"
+            }
+          }).catch(e => console.log("FCM Disaster broadcast failed:", e));
+        }
+      } else {
+        console.log(`⏭️ Skipping duplicate alert: ${title}`);
+      }
+    } else {
+      console.log("✅ Weather seems normal. No disasters detected.");
+    }
+  } catch (err) {
+    console.error("❌ Disaster checker failed:", err.message);
+  }
+}
+
+// Start the periodic check
+setInterval(checkNaturalDisasters, CHECK_INTERVAL);
+// Also run once immediately on startup
+setTimeout(checkNaturalDisasters, 5000);
+
+// ===============================
 // START SERVER
 // ===============================
 app.listen(3000, () => {
