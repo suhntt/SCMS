@@ -46,8 +46,8 @@ fun ComplaintsScreen(navController: NavController, filteredId: String? = null) {
         }
     }
 
-    // First load
-    LaunchedEffect(Unit) {
+    // Reload every time the ID changes
+    LaunchedEffect(filteredId) {
         loadComplaints()
     }
 
@@ -65,7 +65,14 @@ fun ComplaintsScreen(navController: NavController, filteredId: String? = null) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Complaints") }
+                title = { Text(if (filteredId != null) "Complaint Detail" else "Complaints") },
+                actions = {
+                    if (filteredId != null) {
+                        TextButton(onClick = { navController.navigate("complaints?id={id}") }) {
+                            Text("Show All", color = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                }
             )
         },
         floatingActionButton = {
