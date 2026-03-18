@@ -136,7 +136,8 @@ fun ComplaintsScreen(navController: NavController) {
                     onUpvote = {
                         scope.launch {
                             try {
-                                RetrofitClient.api.upvote(complaint.id.toInt())
+                                val userId = UserSession.currentUser?.id ?: return@launch
+                                RetrofitClient.api.upvote(complaint.id.toInt(), mapOf("user_id" to userId))
                                 loadComplaints() // Refresh after upvote too
                             } catch (e: Exception) {
                                 e.printStackTrace()

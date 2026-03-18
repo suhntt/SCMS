@@ -435,6 +435,9 @@ app.get("/complaints", async (req, res) => {
 // ================================================
 app.post("/upvote/:id", async (req, res) => {
   const compId = req.params.id;
+  const { user_id } = req.body;
+
+  if (!user_id) return res.status(400).json({ success: false, message: "user_id required" });
 
   try {
     const compRef = db.collection("complaints").doc(compId.toString());
@@ -442,20 +445,42 @@ app.post("/upvote/:id", async (req, res) => {
 
     if (!doc.exists) return res.status(404).json({ success: false });
 
-    // increment complaint upvote
+    const row = doc.data();
+    const upvoted_by = row.upvoted_by || [];
+    
+    // Toggle logic: If user already upvoted, remove it. Otherwise, add it.
+    if (upvoted_by.includes(user_id)) {
+      await compRef.update({
+        upvotes: admin.firestore.FieldValue.increment(-1),
+        upvoted_by: admin.firestore.FieldValue.arrayRemove(user_id)
+      });
+      // remove 2 pts 
+      if (row.user_id) {
+        try {
+          await db.collection("users").doc(row.user_id.toString()).update({
+            points: admin.firestore.FieldValue.increment(-2)
+          });
+        } catch(e) {}
+      }
+      return res.json({ success: true, action: "removed" });
+    }
+
+    // New upvote
     await compRef.update({
-      upvotes: admin.firestore.FieldValue.increment(1)
+      upvotes: admin.firestore.FieldValue.increment(1),
+      upvoted_by: admin.firestore.FieldValue.arrayUnion(user_id)
     });
 
     // award 2 pts to reporter
-    const row = doc.data();
     if (row.user_id) {
-      await db.collection("users").doc(row.user_id.toString()).update({
-        points: admin.firestore.FieldValue.increment(2)
-      });
+      try {
+        await db.collection("users").doc(row.user_id.toString()).update({
+          points: admin.firestore.FieldValue.increment(2)
+        });
+      } catch(e) {}
     }
 
-    res.json({ success: true });
+    res.json({ success: true, action: "added" });
   } catch (err) {
     console.error("❌ Upvote error:", err);
     res.status(500).json({ success: false });

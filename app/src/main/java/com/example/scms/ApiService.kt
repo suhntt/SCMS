@@ -16,7 +16,8 @@ interface ApiService {
 
     @POST("upvote/{id}")
     suspend fun upvote(
-        @Path("id") id: Int
+        @Path("id") id: Int,
+        @Body body: Map<String, Int>
     ): Response<Unit>
 
     @Multipart
