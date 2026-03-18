@@ -358,6 +358,32 @@ app.post("/complaint", upload.single("photo"), async (req, res) => {
       }).catch(e => console.error("Points update error:", e));
     }
 
+    // 📢 BROADCAST ALERT TO ALL USERS 📢
+    try {
+      const alertMsg = `A user reported an issue: ${finalCategory} at ${place}.`;
+      
+      const newAlertId = await getNextId("alerts");
+      await db.collection("alerts").doc(newAlertId.toString()).set({
+        title: "New Public Complaint",
+        message: alertMsg,
+        type: "warning",
+        area: place,
+        created_at: admin.firestore.FieldValue.serverTimestamp()
+      });
+
+      if (admin.apps.length > 0) {
+        admin.messaging().send({
+          topic: "all_users",
+          notification: {
+            title: "New Civic Issue Reported",
+            body: alertMsg
+          }
+        }).catch(e => console.log("FCM broadcast failed:", e));
+      }
+    } catch (alertErr) {
+      console.error("Alert broadcast error:", alertErr);
+    }
+
     res.json({ success: true, complaintId: newId });
   } catch (err) {
     console.error("❌ Insert error:", err);
