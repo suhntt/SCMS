@@ -268,7 +268,16 @@ fun SignupScreen(navController: NavController) {
                                 auth.createUserWithEmailAndPassword(email.trim(), password)
                                     .addOnSuccessListener { result ->
                                         val uid = result.user!!.uid
-                                        val userData = mapOf("name" to name, "phone" to phone, "email" to email)
+                                        val generatedId = (System.currentTimeMillis() and 0x7FFFFFFFL).toInt()
+                                        val userData = mapOf(
+                                            "id" to generatedId,
+                                            "name" to name,
+                                            "phone" to phone,
+                                            "email" to email,
+                                            "points" to 0,
+                                            "badgeLevel" to "Citizen",
+                                            "profile_picture" to null
+                                        )
 
                                         firestore.collection("users").document(uid).set(userData)
                                             .addOnSuccessListener {

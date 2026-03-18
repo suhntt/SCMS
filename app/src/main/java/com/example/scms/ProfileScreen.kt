@@ -74,44 +74,58 @@ fun ProfileScreen(navController: NavController) {
                 if (firebaseUid != null) {
                     // Step 2: Fetch profile from Firestore
                     val db = FirebaseFirestore.getInstance()
-                    val doc = db.collection("users").document(firebaseUid).get().await()
+                    db.collection("users").document(firebaseUid).get()
+                        .addOnSuccessListener { doc ->
+                            val fetchedName    = doc.getString("name") ?: user?.name ?: ""
+                            val fetchedPhone   = doc.getString("phone") ?: user?.phone ?: ""
+                            val fetchedEmail   = doc.getString("email") ?: user?.email
+                            val fetchedPic     = doc.getString("profile_picture") ?: user?.profile_picture
+                            val fetchedBadge   = doc.getString("badgeLevel") ?: "Citizen"
+                            val fetchedPoints  = (doc.getLong("points") ?: 0L).toInt()
+                            val fetchedId      = (doc.getLong("id") ?: user?.id?.toLong() ?: 0L).toInt()
 
-                    val fetchedName    = doc.getString("name") ?: user?.name ?: ""
-                    val fetchedPhone   = doc.getString("phone") ?: user?.phone ?: ""
-                    val fetchedEmail   = doc.getString("email") ?: user?.email
-                    val fetchedPic     = doc.getString("profile_picture") ?: user?.profile_picture
-                    val fetchedBadge   = doc.getString("badgeLevel") ?: "Citizen"
-                    val fetchedPoints  = (doc.getLong("points") ?: 0L).toInt()
-                    val fetchedId      = (doc.getLong("id") ?: user?.id?.toLong() ?: 0L).toInt()
+                            val freshUser = User(
+                                id             = fetchedId,
+                                name           = fetchedName,
+                                phone          = fetchedPhone,
+                                email          = fetchedEmail,
+                                profile_picture = fetchedPic,
+                                points         = fetchedPoints,
+                                badgeLevel     = fetchedBadge
+                            )
+                            UserSession.currentUser = freshUser
+                            SessionManager(context).saveUser(freshUser)
+                            user   = freshUser
+                            points = fetchedPoints
 
-                    val freshUser = User(
-                        id             = fetchedId,
-                        name           = fetchedName,
-                        phone          = fetchedPhone,
-                        email          = fetchedEmail,
-                        profile_picture = fetchedPic,
-                        points         = fetchedPoints,
-                        badgeLevel     = fetchedBadge
-                    )
-                    UserSession.currentUser = freshUser
-                    SessionManager(context).saveUser(freshUser)
-                    user   = freshUser
-                    points = fetchedPoints
+                            // Step 3: Load leaderboard rank (uses backend integer id)
+                            val uid = freshUser.id
+                            if (uid > 0) {
+                                scope.launch {
+                                    try {
+                                        val board = RetrofitClient.api.getLeaderboard()
+                                        val myEntry = board.indexOfFirst { it.id == uid }
+                                        if (myEntry >= 0) {
+                                            myRank  = myEntry + 1
+                                            myStats = board[myEntry]
+                                        }
+                                    } catch (_: Exception) {}
+                                    finally { isRefreshing = false }
+                                }
+                            } else {
+                                isRefreshing = false
+                            }
+                        }
+                        .addOnFailureListener {
+                            isRefreshing = false
+                        }
+                } else {
+                    isRefreshing = false
                 }
 
-                // Step 3: Load leaderboard rank (uses backend integer id)
-                val uid = user?.id ?: 0
-                if (uid > 0) {
-                    val board = RetrofitClient.api.getLeaderboard()
-                    val myEntry = board.indexOfFirst { it.id == uid }
-                    if (myEntry >= 0) {
-                        myRank  = myEntry + 1
-                        myStats = board[myEntry]
-                    }
-                }
-
-            } catch (_: Exception) { /* use cached data if offline */ }
-            finally { isRefreshing = false }
+            } catch (_: Exception) { 
+                isRefreshing = false 
+            }
 
         }
     }
