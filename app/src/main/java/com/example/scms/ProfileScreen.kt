@@ -33,7 +33,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 private val Gold  = Color(0xFFFFD700)
 private val Navy  = Color(0xFF0F1B2D)
@@ -45,59 +48,71 @@ fun ProfileScreen(navController: NavController) {
     val context = LocalContext.current
     val scope   = rememberCoroutineScope()
 
-    // ─── Live state (refreshed from API) ───────────────
-    var user   by remember { mutableStateOf(UserSession.currentUser) }
-    var points by remember { mutableIntStateOf(user?.points ?: 0) }
-    var myRank by remember { mutableIntStateOf(0) }
-    var myStats by remember { mutableStateOf<LeaderboardEntry?>(null) }
-    var isRefreshing by remember { mutableStateOf(false) }
+    // ─── Live state ────────────────────────────────────
+    var user       by remember { mutableStateOf(UserSession.currentUser) }
+    var points     by remember { mutableIntStateOf(user?.points ?: 0) }
+    var myRank     by remember { mutableIntStateOf(0) }
+    var myStats    by remember { mutableStateOf<LeaderboardEntry?>(null) }
+    var isRefreshing    by remember { mutableStateOf(true) }
     var isUploadingPhoto by remember { mutableStateOf(false) }
 
-    // Animate points number
     val animatedPoints by animateIntAsState(
         targetValue = points,
         animationSpec = tween(1200, easing = FastOutSlowInEasing),
         label = "points_anim"
     )
 
-    // Load points and rank on first composition
+    // ─── Fetch ALL user data directly from Firebase Firestore ───
     LaunchedEffect(Unit) {
         scope.launch {
-            val uid = user?.id ?: return@launch
-            isRefreshing = true
             try {
-                // Refresh points and extra user data
-                val resp = RetrofitClient.api.getUserPoints(uid)
-                if (resp.isSuccessful) {
-                    val body = resp.body()
-                    val newPts = body?.points ?: points
-                    points = newPts
-                    // Update session
-                    val sessionMgr = SessionManager(context)
-                    sessionMgr.updatePoints(newPts)
-                    
-                    // Merge extra fields returned from points API
-                    val updatedUser = user?.copy(
-                        points = newPts,
-                        email = body?.email ?: user?.email,
-                        profile_picture = body?.profile_picture ?: user?.profile_picture,
-                        badgeLevel = body?.badgeLevel ?: user?.badgeLevel ?: "Citizen",
-                        name = body?.name ?: user?.name ?: "Citizen",
-                        phone = body?.phone ?: user?.phone ?: ""
+                isRefreshing = true
+
+                // Step 1: Get Firebase Auth UID of current user
+                val firebaseUid = FirebaseAuth.getInstance().currentUser?.uid
+
+                if (firebaseUid != null) {
+                    // Step 2: Fetch profile from Firestore
+                    val db = FirebaseFirestore.getInstance()
+                    val doc = db.collection("users").document(firebaseUid).get().await()
+
+                    val fetchedName    = doc.getString("name") ?: user?.name ?: ""
+                    val fetchedPhone   = doc.getString("phone") ?: user?.phone ?: ""
+                    val fetchedEmail   = doc.getString("email") ?: user?.email
+                    val fetchedPic     = doc.getString("profile_picture") ?: user?.profile_picture
+                    val fetchedBadge   = doc.getString("badgeLevel") ?: "Citizen"
+                    val fetchedPoints  = (doc.getLong("points") ?: 0L).toInt()
+                    val fetchedId      = (doc.getLong("id") ?: user?.id?.toLong() ?: 0L).toInt()
+
+                    val freshUser = User(
+                        id             = fetchedId,
+                        name           = fetchedName,
+                        phone          = fetchedPhone,
+                        email          = fetchedEmail,
+                        profile_picture = fetchedPic,
+                        points         = fetchedPoints,
+                        badgeLevel     = fetchedBadge
                     )
-                    UserSession.currentUser = updatedUser
-                    user = UserSession.currentUser
+                    UserSession.currentUser = freshUser
+                    SessionManager(context).saveUser(freshUser)
+                    user   = freshUser
+                    points = fetchedPoints
                 }
 
-                // Get rank from leaderboard
-                val board = RetrofitClient.api.getLeaderboard()
-                val myEntry = board.indexOfFirst { it.id == uid }
-                if (myEntry >= 0) {
-                    myRank = myEntry + 1
-                    myStats = board[myEntry]
+                // Step 3: Load leaderboard rank (uses backend integer id)
+                val uid = user?.id ?: 0
+                if (uid > 0) {
+                    val board = RetrofitClient.api.getLeaderboard()
+                    val myEntry = board.indexOfFirst { it.id == uid }
+                    if (myEntry >= 0) {
+                        myRank  = myEntry + 1
+                        myStats = board[myEntry]
+                    }
                 }
-            } catch (_: Exception) { /* offline – use cached points */ }
+
+            } catch (_: Exception) { /* use cached data if offline */ }
             finally { isRefreshing = false }
+
         }
     }
 
