@@ -10,8 +10,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.foundation.clickable
+import androidx.navigation.NavController
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,6 +34,9 @@ data class Alert(
     val message: String = "",
     val type: String = "info",          // "warning" | "danger" | "info"
     val area: String = "",
+    val reporterName: String = "",
+    val complaintId: String = "",
+    val photoUrl: String? = null,
     val created_at: String? = null
 )
 
@@ -42,7 +49,7 @@ private val BlueInfo = Color(0xFF3B82F6)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AlertsScreen() {
+fun AlertsScreen(navController: NavController) {
 
     val scope = rememberCoroutineScope()
     var alerts by remember { mutableStateOf<List<Alert>>(emptyList()) }
@@ -203,7 +210,11 @@ fun AlertsScreen() {
                     }
 
                     items(alerts) { alert ->
-                        AlertCard(alert = alert)
+                        AlertCard(alert = alert, onClick = {
+                            if (alert.complaintId.isNotEmpty()) {
+                                navController.navigate("complaints?id=${alert.complaintId}")
+                            }
+                        })
                     }
                 }
             }
@@ -261,7 +272,7 @@ private fun SummaryChip(label: String, color: Color) {
 }
 
 @Composable
-private fun AlertCard(alert: Alert) {
+private fun AlertCard(alert: Alert, onClick: () -> Unit = {}) {
     val (accentColor, iconVec, bgGrad) = when (alert.type) {
         "danger"  -> Triple(
             RedAlert,
@@ -285,6 +296,7 @@ private fun AlertCard(alert: Alert) {
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .background(Brush.linearGradient(bgGrad))
+            .clickable { onClick() }
     ) {
         // Left accent bar
         Box(
@@ -294,78 +306,99 @@ private fun AlertCard(alert: Alert) {
                 .background(accentColor.copy(alpha = 0.8f))
         )
 
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 16.dp, top = 14.dp, end = 14.dp, bottom = 14.dp),
-            verticalAlignment = Alignment.Top
+                .padding(start = 16.dp, top = 14.dp, end = 14.dp, bottom = 14.dp)
         ) {
-            // Icon
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .background(accentColor.copy(alpha = 0.15f), RoundedCornerShape(10.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(iconVec, null, tint = accentColor, modifier = Modifier.size(22.dp))
-            }
+            Row(verticalAlignment = Alignment.Top) {
+                // Icon
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(accentColor.copy(alpha = 0.15f), RoundedCornerShape(10.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(iconVec, null, tint = accentColor, modifier = Modifier.size(22.dp))
+                }
 
-            Spacer(Modifier.width(12.dp))
+                Spacer(Modifier.width(12.dp))
 
-            Column(modifier = Modifier.weight(1f)) {
-                // Title
-                Text(
-                    text = alert.title.ifEmpty { "Alert" },
-                    color = accentColor,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp
-                )
-
-                // Message
-                if (alert.message.isNotEmpty()) {
-                    Spacer(Modifier.height(4.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    // Title
                     Text(
-                        text = alert.message,
-                        color = Color.White.copy(alpha = 0.85f),
-                        fontSize = 13.sp,
-                        lineHeight = 18.sp
+                        text = alert.title.ifEmpty { "Alert" },
+                        color = accentColor,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp
                     )
-                }
 
-                // Area + time
-                Spacer(Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    if (alert.area.isNotEmpty()) {
+                    // Message
+                    if (alert.message.isNotEmpty()) {
+                        Spacer(Modifier.height(4.dp))
                         Text(
-                            "Area: ${alert.area}",
-                            color = Color.White.copy(alpha = 0.5f),
-                            fontSize = 11.sp
+                            text = alert.message,
+                            color = Color.White.copy(alpha = 0.85f),
+                            fontSize = 13.sp,
+                            lineHeight = 18.sp
                         )
                     }
-                    alert.created_at?.let { ts ->
-                        val formatted = try {
-                            formatTo12Hour(ts)
-                        } catch (_: Exception) { ts }
-                        Text(
-                            "Time: $formatted",
-                            color = Color.White.copy(alpha = 0.4f),
-                            fontSize = 11.sp
-                        )
+
+                    Spacer(Modifier.height(8.dp))
+
+                    // Reporter
+                    if (alert.reporterName.isNotEmpty()) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Filled.Person, null, tint = Color.White.copy(0.4f), modifier = Modifier.size(14.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                "Reported by ${alert.reporterName}",
+                                color = Color.White.copy(alpha = 0.6f),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                        Spacer(Modifier.height(4.dp))
+                    }
+
+                    // Area & Time
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.Top) {
+                        if (alert.area.isNotEmpty()) {
+                            Row(modifier = Modifier.weight(1f, fill = false)) {
+                                Icon(Icons.Filled.LocationOn, null, tint = OrangeW, modifier = Modifier.size(12.dp).padding(top = 2.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text(
+                                    alert.area,
+                                    color = Color.White.copy(alpha = 0.5f),
+                                    fontSize = 11.sp,
+                                    maxLines = 2
+                                )
+                            }
+                        }
+                        alert.created_at?.let { ts ->
+                            val formatted = try {
+                                formatTo12Hour(ts)
+                            } catch (_: Exception) { ts }
+                            Text(
+                                formatted,
+                                color = Color.White.copy(alpha = 0.4f),
+                                fontSize = 11.sp
+                            )
+                        }
                     }
                 }
             }
-
-            // Type badge
-            Box(
-                modifier = Modifier
-                    .background(accentColor.copy(alpha = 0.15f), RoundedCornerShape(6.dp))
-                    .padding(horizontal = 8.dp, vertical = 4.dp)
-            ) {
+            
+            if (alert.complaintId.isNotEmpty()) {
+                Spacer(Modifier.height(12.dp))
+                HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
+                Spacer(Modifier.height(8.dp))
                 Text(
-                    text = alert.type.replaceFirstChar { it.uppercase() },
-                    color = accentColor,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold
+                    "View complete complaint details →",
+                    color = BlueInfo,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.align(Alignment.End)
                 )
             }
         }

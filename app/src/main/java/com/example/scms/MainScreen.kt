@@ -59,13 +59,14 @@ fun MainScreen() {
             }
 
             // 📋 COMPLAINTS
-            composable("complaints") {
-                ComplaintsScreen(navController)
+            composable("complaints?id={id}") { backStackEntry ->
+                val filteredId = backStackEntry.arguments?.getString("id")
+                ComplaintsScreen(navController, filteredId)
             }
 
             // 🔔 ALERTS
             composable("alerts") {
-                AlertsScreen()
+                AlertsScreen(navController)
             }
 
             // 📷 CAMERA

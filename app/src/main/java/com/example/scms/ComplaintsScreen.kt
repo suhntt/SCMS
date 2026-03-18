@@ -18,7 +18,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ComplaintsScreen(navController: NavController) {
+fun ComplaintsScreen(navController: NavController, filteredId: String? = null) {
 
     val scope = rememberCoroutineScope()
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -32,7 +32,12 @@ fun ComplaintsScreen(navController: NavController) {
         isLoading = true
         error = null
         try {
-            complaints = RetrofitClient.api.getComplaints()
+            val fetched = RetrofitClient.api.getComplaints()
+            complaints = if (filteredId != null) {
+                fetched.filter { it.id.toString() == filteredId }
+            } else {
+                fetched
+            }
         } catch (e: Exception) {
             e.printStackTrace()
             error = "Unable to load complaints. Is the server running?"

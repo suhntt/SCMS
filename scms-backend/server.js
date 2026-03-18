@@ -351,23 +351,32 @@ app.post("/complaint", upload.single("photo"), async (req, res) => {
     });
 
     // Award 10 points
+    let reporterName = "An anonymous citizen";
     if (uid) {
       const userRef = db.collection("users").doc(uid.toString());
-      await userRef.update({
-        points: admin.firestore.FieldValue.increment(10)
-      }).catch(e => console.error("Points update error:", e));
+      try {
+        const udoc = await userRef.get();
+        if (udoc.exists && udoc.data().name) reporterName = udoc.data().name;
+        
+        await userRef.update({
+          points: admin.firestore.FieldValue.increment(10)
+        });
+      } catch (e) {
+        console.error("Points update error:", e);
+      }
     }
 
     // 📢 BROADCAST ALERT TO ALL USERS 📢
     try {
-      const alertMsg = `A user reported an issue: ${finalCategory} at ${place}.`;
-      
       const newAlertId = await getNextId("alerts");
       await db.collection("alerts").doc(newAlertId.toString()).set({
-        title: "New Public Complaint",
-        message: alertMsg,
-        type: "warning",
+        title: finalCategory,
+        message: description || "No description provided.",
+        reporterName: reporterName,
+        complaintId: newId.toString(),
+        type: finalSeverity === 'High' ? "danger" : (finalSeverity === 'Medium' ? "warning" : "info"),
         area: place,
+        photoUrl: photoUrl,
         created_at: admin.firestore.FieldValue.serverTimestamp()
       });
 
@@ -375,8 +384,13 @@ app.post("/complaint", upload.single("photo"), async (req, res) => {
         admin.messaging().send({
           topic: "all_users",
           notification: {
-            title: "New Civic Issue Reported",
-            body: alertMsg
+            title: `🚨 ${finalSeverity === 'High' ? 'High Severity Issue' : 'New Civic Issue'}`,
+            body: `${reporterName} reported ${finalCategory} near ${place}.`
+          },
+          data: {
+             // Pass complain id so mobile app code could open it directly if clicked
+             "complaintId": newId.toString(),
+             "screen": "complaints"
           }
         }).catch(e => console.log("FCM broadcast failed:", e));
       }
