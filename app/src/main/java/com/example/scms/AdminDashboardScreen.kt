@@ -81,7 +81,7 @@ fun AdminDashboardScreen(navController: NavController) {
 
                         c.photo_url?.let {
                             AsyncImage(
-                                model = "http://localhost:3000/$it",
+                                model = it,
                                 contentDescription = "Complaint Image",
                                 modifier = Modifier
                                     .fillMaxWidth()

@@ -16,7 +16,12 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Work
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material3.*
+import androidx.compose.foundation.clickable
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody.Companion.toRequestBody
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,12 +45,13 @@ fun ProfileScreen(navController: NavController) {
     val context = LocalContext.current
     val scope   = rememberCoroutineScope()
 
-    // ─── Live points state (refreshed from API) ───────────────
+    // ─── Live state (refreshed from API) ───────────────
     var user   by remember { mutableStateOf(UserSession.currentUser) }
     var points by remember { mutableIntStateOf(user?.points ?: 0) }
     var myRank by remember { mutableIntStateOf(0) }
     var myStats by remember { mutableStateOf<LeaderboardEntry?>(null) }
     var isRefreshing by remember { mutableStateOf(false) }
+    var isUploadingPhoto by remember { mutableStateOf(false) }
 
     // Animate points number
     val animatedPoints by animateIntAsState(
@@ -60,15 +66,26 @@ fun ProfileScreen(navController: NavController) {
             val uid = user?.id ?: return@launch
             isRefreshing = true
             try {
-                // Refresh points
+                // Refresh points and extra user data
                 val resp = RetrofitClient.api.getUserPoints(uid)
                 if (resp.isSuccessful) {
-                    val newPts = resp.body()?.points ?: points
+                    val body = resp.body()
+                    val newPts = body?.points ?: points
                     points = newPts
                     // Update session
                     val sessionMgr = SessionManager(context)
                     sessionMgr.updatePoints(newPts)
-                    UserSession.currentUser = user?.copy(points = newPts)
+                    
+                    // Merge extra fields returned from points API
+                    val updatedUser = user?.copy(
+                        points = newPts,
+                        email = body?.email ?: user?.email,
+                        profile_picture = body?.profile_picture ?: user?.profile_picture,
+                        badgeLevel = body?.badgeLevel ?: user?.badgeLevel ?: "Citizen",
+                        name = body?.name ?: user?.name ?: "Citizen",
+                        phone = body?.phone ?: user?.phone ?: ""
+                    )
+                    UserSession.currentUser = updatedUser
                     user = UserSession.currentUser
                 }
 
@@ -81,6 +98,40 @@ fun ProfileScreen(navController: NavController) {
                 }
             } catch (_: Exception) { /* offline – use cached points */ }
             finally { isRefreshing = false }
+        }
+    }
+
+    // Image Picker for Profile Photo
+    val galleryLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.GetContent()
+    ) { uri: android.net.Uri? ->
+        if (uri != null) {
+            scope.launch {
+                try {
+                    isUploadingPhoto = true
+                    val bytes = context.contentResolver.openInputStream(uri)?.readBytes()
+                    if (bytes != null) {
+                        val requestBody = bytes.toRequestBody("image/jpeg".toMediaTypeOrNull())
+                        val part = okhttp3.MultipartBody.Part.createFormData("photo", "profile.jpg", requestBody)
+                        val uid = user?.id ?: return@launch
+                        
+                        val response = RetrofitClient.api.updateProfile(uid, part)
+                        if (response.isSuccessful) {
+                            val newPhotoUrl = response.body()?.profile_picture
+                            val updatedUser = user?.copy(profile_picture = newPhotoUrl)
+                            UserSession.currentUser = updatedUser
+                            user = updatedUser
+                            android.widget.Toast.makeText(context, "Profile photo updated", android.widget.Toast.LENGTH_SHORT).show()
+                        } else {
+                            android.widget.Toast.makeText(context, "Upload failed", android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                } catch (e: Exception) {
+                    android.widget.Toast.makeText(context, "Error uploading photo", android.widget.Toast.LENGTH_SHORT).show()
+                } finally {
+                    isUploadingPhoto = false
+                }
+            }
         }
     }
 
@@ -124,17 +175,47 @@ fun ProfileScreen(navController: NavController) {
                     // Avatar
                     Box(
                         modifier = Modifier
-                            .size(80.dp)
-                            .background(Color(0xFF2563EB), CircleShape),
+                            .size(90.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFF2563EB), CircleShape)
+                            .clickable { galleryLauncher.launch("image/*") },
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = user?.name?.firstOrNull()?.uppercase() ?: "U",
-                            fontSize = 32.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = Color.White
-                        )
+                        if (user?.profile_picture != null) {
+                            coil.compose.AsyncImage(
+                                model = user?.profile_picture,
+                                contentDescription = "Profile Photo",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                            )
+                        } else {
+                            Text(
+                                text = user?.name?.firstOrNull()?.uppercase() ?: "U",
+                                fontSize = 36.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color.White
+                            )
+                        }
+                        
+                        // Show overlay if uploading
+                        if (isUploadingPhoto) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(Color.Black.copy(alpha = 0.5f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                            }
+                        }
                     }
+                    
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = "Tap to change photo",
+                        fontSize = 11.sp,
+                        color = Color.White.copy(alpha = 0.5f)
+                    )
 
                     Spacer(Modifier.height(12.dp))
 
@@ -230,6 +311,7 @@ fun ProfileScreen(navController: NavController) {
                     PointsRuleRow("Submit a complaint", Icons.Default.Edit, "+10 pts")
                     PointsRuleRow("Your complaint gets a vote", Icons.Default.ThumbUp, "+2 pts")
                     PointsRuleRow("Your complaint is resolved", Icons.Default.CheckCircle, "+20 pts")
+                    PointsRuleRow("Refer this app to a friend", Icons.Default.Share, "+100 pts")
                 }
             }
 
@@ -243,9 +325,10 @@ fun ProfileScreen(navController: NavController) {
             ) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     ProfileRow("Name", Icons.Default.Person, user?.name ?: "N/A")
+                    ProfileRow("Email", Icons.Default.Email, user?.email ?: "Not set")
                     ProfileRow("Phone", Icons.Default.Phone, user?.phone ?: "N/A")
                     ProfileRow("Role", Icons.Default.Work, "Citizen")
-                    ProfileRow("Status", Icons.Default.Star, "Active Civic Reporter")
+                    ProfileRow("Status", Icons.Default.Star, user?.badgeLevel ?: "Active Civic Reporter")
                 }
             }
 

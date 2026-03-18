@@ -4,5 +4,8 @@ data class User(
     val id: Int,
     val name: String,
     val phone: String,
-    val points: Int = 0
+    val email: String? = null,
+    val profile_picture: String? = null,
+    val points: Int = 0,
+    val badgeLevel: String = "Citizen"
 )

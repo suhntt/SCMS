@@ -53,6 +53,13 @@ interface ApiService {
         @Path("id") id: Int
     ): Response<PointsResponse>
 
+    @Multipart
+    @POST("user/{id}/profile")
+    suspend fun updateProfile(
+        @Path("id") id: Int,
+        @Part photo: MultipartBody.Part
+    ): Response<ProfileUpdateResponse>
+
     // ===============================
     // ADMIN SIDE
     // ===============================

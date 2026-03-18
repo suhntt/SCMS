@@ -222,6 +222,8 @@ app.post("/login", async (req, res) => {
         id: userData.id,
         name: userData.name,
         phone: userData.phone,
+        email: userData.email || null,
+        profile_picture: userData.profile_picture || null,
         points: userData.points || 0,
         badgeLevel: userData.badgeLevel || "Citizen"
       }
@@ -575,9 +577,35 @@ app.get("/user/:id/points", async (req, res) => {
   try {
     const doc = await db.collection("users").doc(req.params.id).get();
     if (!doc.exists) return res.status(404).json({ error: "User not found" });
-    res.json({ points: doc.data().points || 0 });
+    res.json({ points: doc.data().points || 0, badgeLevel: doc.data().badgeLevel || "Citizen", profile_picture: doc.data().profile_picture, email: doc.data().email, phone: doc.data().phone, name: doc.data().name });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// ===============================
+// PROFILE UPDATE: PHOTO & INFO
+// ===============================
+app.post("/user/:id/profile", upload.single("photo"), async (req, res) => {
+  try {
+    let updates = {};
+    if (req.file) {
+      try {
+        const photoUrl = await uploadToCloudinary(req.file.buffer);
+        updates.profile_picture = photoUrl;
+      } catch (uploadErr) {
+        console.warn("⚠️ Cloudinary upload failed:", uploadErr);
+        return res.status(500).json({ success: false, message: "Photo upload failed" });
+      }
+    }
+    
+    if (Object.keys(updates).length > 0) {
+      await db.collection("users").doc(req.params.id).update(updates);
+    }
+    res.json({ success: true, profile_picture: updates.profile_picture });
+  } catch (err) {
+    console.error("❌ Profile update error:", err);
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
