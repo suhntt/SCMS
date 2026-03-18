@@ -675,6 +675,38 @@ app.post("/user/:id/profile", upload.single("photo"), async (req, res) => {
 });
 
 // ===============================
+// 🧪 MOCK DISASTER TESTER (Manually trigger 'Be Safe' alert)
+// ===============================
+app.get("/test-disaster", async (req, res) => {
+  try {
+    const title = "⛈️ Simulated Thunderstorm Warning";
+    const message = "This is a TEST alert: Severe thunderstorm detected. Please stay indoors and be safe!";
+    
+    const newId = await getNextId("alerts");
+    await db.collection("alerts").doc(newId.toString()).set({
+      title,
+      message,
+      type: "danger",
+      area: "TEST SIMULATION",
+      reporterName: "System Test Bot",
+      created_at: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    if (admin.apps.length > 0) {
+      await admin.messaging().send({
+        topic: "all_users",
+        notification: { title, body: message },
+        data: { "screen": "alerts" }
+      });
+    }
+
+    res.json({ success: true, message: "Mock disaster alert broadcasted!" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ===============================
 // PUSH NOTIFICATIONS: UPDATE FCM TOKEN
 // ===============================
 app.post("/user/:id/fcm", async (req, res) => {
