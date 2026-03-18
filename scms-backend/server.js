@@ -680,7 +680,18 @@ app.post("/user/:id/fcm", async (req, res) => {
 app.get("/alerts", async (req, res) => {
   try {
     const snap = await db.collection("alerts").orderBy("created_at", "desc").get();
-    res.json(snap.docs.map(doc => ({ alertId: doc.id, ...doc.data() })));
+    res.json(snap.docs.map(doc => {
+      const data = doc.data();
+      let formattedTime = null;
+      if (data.created_at && data.created_at.toDate) {
+        formattedTime = data.created_at.toDate().toISOString();
+      }
+      return { 
+        alertId: doc.id, 
+        ...data,
+        created_at: formattedTime
+      };
+    }));
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
