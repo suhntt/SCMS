@@ -23,7 +23,7 @@ fun BottomBar(navController: NavController) {
 
         items.forEach { item ->
             NavigationBarItem(
-                selected = currentRoute == item.route,
+                selected = currentRoute == item.route || (item == BottomNavItem.Complaints && currentRoute?.startsWith("complaints") == true),
                 onClick = {
                     navController.navigate(item.route) {
                         popUpTo("home") { saveState = true }

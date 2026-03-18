@@ -14,7 +14,7 @@ fun MainScreen() {
     // ✅ Bottom bar visible ONLY after login
     val bottomBarScreens = listOf(
         "home",
-        "complaints",
+        "complaints?id={id}",
         "alerts",
         "leaderboard",
         "profile"
